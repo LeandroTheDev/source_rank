@@ -1,19 +1,55 @@
-# Left 4 Rank
+# Source Rank
 Creates a ranking system that works across multiple servers.
 
 !rank, to view your rank
 
 ## Features
 - On round end receive MMR or lose based on your gameplay
-- On survival and versus show the survivor MVP (Most killed special infected)
+- [Left 4 Dead 2] On survival and versus show the survivor MVP (Most killed special infected)
+- [No More Room in Hell] End of objective or round show the survivor MVP (Most scores) (TO DO)
 
 ## Requirements
+- If ``rankDisplayRank`` is enabled [scp](https://bitbucket.org/minimoney1/simple-chat-processor/src/master/) is required
 - [Any Sourcemod compatible Database](https://www.mysql.com/)
 - Sourcemod and metamod
 
-## Command line
-- -rankDisableAutoMenu ``Disables menu when player spawn``
-- -debug ``Additional infos when playing for debug porpuses``
+## CVARS
+- rankShouldDebug
+- > Enable debug logging
+- rankDisableAutoMenu
+- > If 0, disables the rank menu on player join
+- rankPlayerMaxScore
+- > Maximum score a player can earn per round
+- rankPlayerScoreLoseOnRoundLose
+- > Score lost on round lose
+- rankPlayerScoreEarnOnMarker
+- > Score earned on marker reached [Left 4 Dead 2 Only]
+- rankPlayerScoreEarnOnRoundWin
+- > Score earned on round win
+- rankPlayerScoreEarnPerSurvivorHurt
+- > Score earned per damage dealt to a survivor [Left 4 Dead 2 Only]
+- rankPlayerScoreEarnPerSpecialKill
+- > Score earned per special infected killed [Left 4 Dead 2 Only]
+- rankPlayerScoreEarnPerRevive
+- > Score earned per revive [Left 4 Dead 2 Only]
+- rankPlayerScoreLosePerIncapacitated
+- > Score lost when incapacitated
+- rankPlayerScoreEarnPerIncapacitated
+- > Score earned for incapacitating a survivor [Left 4 Dead 2 Only]
+- rankPlayerScoreStartSurvival
+- > Base score for survivors at round end in survival [Left 4 Dead 2 Only]
+- rankPlayerScoreEarnSurvivalPerSecond
+- > Score earned per second survived [Left 4 Dead 2 Only]
+- rankPlayerScoreInfectedStartSurvival
+- > Base score for infected at round end in survival [Left 4 Dead 2 Only]
+- rankPlayerScoreInfectedLoseSurvivalPerSecond
+- > Score lost per second for infected in survival [Left 4 Dead 2 Only]
+- rankCount
+- > Number of ranks
+- rankDatabaseConfig
+- > Database config name
+- rankNamesPath
+- > Rank names file path
 
 ## Usage
 1. Download the plugin from the latest release:
@@ -23,7 +59,7 @@ Creates a ranking system that works across multiple servers.
 
 3. Configure database in addons/sourcemod/configs/database.cfg
 ```
-"left4rank"
+"sourcerank"
 {
     "driver"    "default"
     "host"      "127.0.0.1"
@@ -46,5 +82,5 @@ CREATE TABLE left4dead2 (
 
 ## Compiling
 
-- Use the compiler from sourcemod to compile the left_4_rank.sp
+- Use the compiler from sourcemod to compile the source_rank.sp
 
