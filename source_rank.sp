@@ -202,7 +202,7 @@ void ReadConfigs()
                 gv_RankThresholds[i] = kv.GetNum(key, 0);
             }
             kv.GoBack();
-            PrintToServer("[Left 4 Rank] rankThresholds Loaded!");
+            PrintToServer("[SourceRank] rankThresholds Loaded!");
         }
         if (kv.JumpToKey("rankNames"))
         {
@@ -213,7 +213,7 @@ void ReadConfigs()
                 kv.GetString(key, gv_RankNames[i], 128);
             }
             kv.GoBack();
-            PrintToServer("[Left 4 Rank] rankNames Loaded!");
+            PrintToServer("[SourceRank] rankNames Loaded!");
         }
     }
     //#endregion Rank names
