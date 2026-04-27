@@ -5,7 +5,7 @@ public Plugin myinfo =
     name        = "Source Rank",
     author      = "LeandroTheDev",
     description = "Player rank system",
-    version     = "1.3",
+    version     = "2.0",
     url         = "https://github.com/LeandroTheDev/source_rank"
 };
 
@@ -33,10 +33,13 @@ char   gv_RankNames[99][128];
 char   gv_Gamemode[64];
 
 int    gv_TimeStampSurvived;
-Handle gv_TimeStampSurvivedTimer = INVALID_HANDLE;
+Handle gv_TimeStampSurvivedTimer           = INVALID_HANDLE;
 
-bool   gv_ShouldDebug            = false;
-bool   gv_ShouldDisplayMenu      = true;
+bool   gv_ShouldDebug                      = false;
+bool   gv_ShouldDisplayMenu                = true;
+bool   gv_ShouldDisplayRankLoginDisconnect = true;
+
+char   gv_DatabaseConfig[128]              = "sourcerank";
 
 #define MVP_COUNT 3
 
@@ -56,6 +59,8 @@ ConVar g_PlayerScoreInfectedLoseSurvivalPerSecond;
 ConVar g_RankCount;
 ConVar g_ShouldDebug;
 ConVar g_ShouldDisplayMenu;
+ConVar g_DatabaseConfig;
+ConVar g_ShouldDisplayRankLoginDisconnect;
 
 void   ReadVariables()
 {
@@ -106,6 +111,12 @@ void   ReadVariables()
 
     gv_ShouldDisplayMenu = g_ShouldDisplayMenu.BoolValue;
     PrintToServer("[SourceRank] Should display menu: %b", gv_ShouldDisplayMenu);
+
+    g_DatabaseConfig.GetString(gv_DatabaseConfig, sizeof(gv_DatabaseConfig));
+    PrintToServer("[SourceRank] Database Config: %s", gv_DatabaseConfig);
+
+    gv_ShouldDisplayRankLoginDisconnect = g_ShouldDisplayRankLoginDisconnect.BoolValue;
+    PrintToServer("[SourceRank] Should display rank login and disconnections: %b", gv_ShouldDisplayRankLoginDisconnect);
 }
 
 void ReadConfigs()
@@ -115,6 +126,19 @@ void ReadConfigs()
 
     if (StrEqual("left4dead2", game))
     {
+        UnhookEvent("player_team", OnPlayerChangeTeam, EventHookMode_Post);
+        UnhookEvent("player_incapacitated", OnPlayerIncapacitated, EventHookMode_Post);
+        UnhookEvent("revive_success", OnPlayerRevive, EventHookMode_Post);
+        UnhookEvent("player_hurt", OnPlayerHurt, EventHookMode_Post);
+        UnhookEvent("player_death", OnSpecialKill, EventHookMode_Post);
+        UnhookEvent("versus_round_start", RoundStartVersus, EventHookMode_Post);
+        UnhookEvent("round_end", RoundEndVersus, EventHookMode_Post);
+        UnhookEvent("versus_marker_reached", MarkerReached, EventHookMode_Post);
+        UnhookEvent("survival_round_start", RoundStartSurvivalVersus, EventHookMode_Post);
+        UnhookEvent("round_end", RoundEndSurvivalVersus, EventHookMode_Post);
+        UnhookEvent("map_transition", RoundEndCoop, EventHookMode_Post);
+        UnhookEvent("mission_lost", RoundEndLoseCoop, EventHookMode_Post);
+
         HookEventEx("player_team", OnPlayerChangeTeam, EventHookMode_Post);
         HookEventEx("player_incapacitated", OnPlayerIncapacitated, EventHookMode_Post);
         HookEventEx("revive_success", OnPlayerRevive, EventHookMode_Post);
@@ -317,6 +341,24 @@ public void OnPluginStart()
         1.0,
         true,
         99.0);
+    g_DatabaseConfig = CreateConVar(
+        "rankDatabaseConfig",
+        "sourcerank",
+        "Database config name",
+        FCVAR_NONE,
+        false,
+        0.0,
+        false,
+        0.0);
+    g_ShouldDisplayRankLoginDisconnect = CreateConVar(
+        "rankShouldDisplayRankLoginDisconnect",
+        "1",
+        "Should display the rank in login and disconnections",
+        FCVAR_NONE,
+        true,
+        0.0,
+        true,
+        1.0);
 
     ReadVariables();
     ReadConfigs();
@@ -840,6 +882,12 @@ public void OnSpecialKill(Event event, const char[] name, bool dontBroadcast)
             PrintToServer("[SourceRank] %d wrong victim name: %s", clientAttacker, victimname);
     }
 }
+
+public void OnMapStart()
+{
+    ReadVariables();
+    ReadConfigs();
+}
 //
 // #endregion Events
 //
@@ -1158,7 +1206,7 @@ stock int MenuHandler(Menu menu, MenuAction action, int client, int param)
 stock Database CreateDatabaseConnection()
 {
     char     error[256];
-    Database database = SQL_Connect("left4rank", true, error, sizeof(error));
+    Database database = SQL_Connect(gv_DatabaseConfig, true, error, sizeof(error));
 
     if (database == null)
     {
@@ -1181,3 +1229,6 @@ stock CheckMaxScore(int client)
         playersScores[client] = gv_PlayerMaxScore;
     }
 }
+//
+// #endregion Utils
+//
