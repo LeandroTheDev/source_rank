@@ -46,86 +46,99 @@ char   gv_DatabaseConfig[128]    = "sourcerank";
 
 #define MVP_COUNT 3
 
-ConVar g_PlayerMaxScore;
-ConVar g_PlayerScoreLoseOnRoundLose;
-ConVar g_PlayerScoreEarnOnMarker;
-ConVar g_PlayerScoreEarnOnRoundWin;
-ConVar g_PlayerScoreEarnPerSurvivorHurt;
-ConVar g_PlayerScoreEarnPerSpecialKill;
-ConVar g_PlayerScoreEarnPerRevive;
-ConVar g_PlayerScoreLosePerIncapacitated;
-ConVar g_PlayerScoreEarnPerIncapacitated;
-ConVar g_PlayerScoreStartSurvival;
-ConVar g_PlayerScoreEarnSurvivalPerSecond;
-ConVar g_PlayerScoreInfectedStartSurvival;
-ConVar g_PlayerScoreInfectedLoseSurvivalPerSecond;
-ConVar g_RankCount;
-ConVar g_RankNamesPath;
-ConVar g_ShouldDebug;
-ConVar g_ShouldDisplayMenu;
-ConVar g_DatabaseConfig;
-ConVar g_ShouldDisplayRank;
+ConVar gc_PlayerMaxScore;
+ConVar gc_PlayerScoreLoseOnRoundLose;
+ConVar gc_PlayerScoreEarnOnMarker;
+ConVar gc_PlayerScoreEarnOnRoundWin;
+ConVar gc_PlayerScoreEarnPerSurvivorHurt;
+ConVar gc_PlayerScoreEarnPerSpecialKill;
+ConVar gc_PlayerScoreEarnPerRevive;
+ConVar gc_PlayerScoreLosePerIncapacitated;
+ConVar gc_PlayerScoreEarnPerIncapacitated;
+ConVar gc_PlayerScoreStartSurvival;
+ConVar gc_PlayerScoreEarnSurvivalPerSecond;
+ConVar gc_PlayerScoreInfectedStartSurvival;
+ConVar gc_PlayerScoreInfectedLoseSurvivalPerSecond;
+ConVar gc_RankCount;
+ConVar gc_RankNamesPath;
+ConVar gc_ShouldDebug;
+ConVar gc_ShouldDisplayMenu;
+ConVar gc_DatabaseConfig;
+ConVar gc_ShouldDisplayRank;
 
 void   ReadVariables()
 {
-    gv_PlayerMaxScore = g_PlayerMaxScore.FloatValue;
+    gv_PlayerMaxScore = gc_PlayerMaxScore.FloatValue;
     PrintToServer("[SourceRank] Player max score: %f", gv_PlayerMaxScore);
 
-    gv_PlayerScoreLoseOnRoundLose = g_PlayerScoreLoseOnRoundLose.FloatValue;
+    gv_PlayerScoreLoseOnRoundLose = gc_PlayerScoreLoseOnRoundLose.FloatValue;
     PrintToServer("[SourceRank] Player score lose on round lose: %f", gv_PlayerScoreLoseOnRoundLose);
 
-    gv_PlayerScoreEarnOnMarker = g_PlayerScoreEarnOnMarker.FloatValue;
+    gv_PlayerScoreEarnOnMarker = gc_PlayerScoreEarnOnMarker.FloatValue;
     PrintToServer("[SourceRank] Player score earn on marker: %f", gv_PlayerScoreEarnOnMarker);
 
-    gv_PlayerScoreEarnOnRoundWin = g_PlayerScoreEarnOnRoundWin.FloatValue;
+    gv_PlayerScoreEarnOnRoundWin = gc_PlayerScoreEarnOnRoundWin.FloatValue;
     PrintToServer("[SourceRank] Player score earn on round win: %f", gv_PlayerScoreEarnOnRoundWin);
 
-    gv_PlayerScoreEarnPerSurvivorHurt = g_PlayerScoreEarnPerSurvivorHurt.FloatValue;
+    gv_PlayerScoreEarnPerSurvivorHurt = gc_PlayerScoreEarnPerSurvivorHurt.FloatValue;
     PrintToServer("[SourceRank] Player score earn per survivor hurt: %f", gv_PlayerScoreEarnPerSurvivorHurt);
 
-    gv_PlayerScoreEarnPerSpecialKill = g_PlayerScoreEarnPerSpecialKill.FloatValue;
+    gv_PlayerScoreEarnPerSpecialKill = gc_PlayerScoreEarnPerSpecialKill.FloatValue;
     PrintToServer("[SourceRank] Player score earn per special kill: %f", gv_PlayerScoreEarnPerSpecialKill);
 
-    gv_PlayerScoreEarnPerRevive = g_PlayerScoreEarnPerRevive.FloatValue;
+    gv_PlayerScoreEarnPerRevive = gc_PlayerScoreEarnPerRevive.FloatValue;
     PrintToServer("[SourceRank] Player score earn per revive: %f", gv_PlayerScoreEarnPerRevive);
 
-    gv_PlayerScoreLosePerIncapacitated = g_PlayerScoreLosePerIncapacitated.FloatValue;
+    gv_PlayerScoreLosePerIncapacitated = gc_PlayerScoreLosePerIncapacitated.FloatValue;
     PrintToServer("[SourceRank] Player score lose per incapacitated: %f", gv_PlayerScoreLosePerIncapacitated);
 
-    gv_PlayerScoreEarnPerIncapacitated = g_PlayerScoreEarnPerIncapacitated.FloatValue;
+    gv_PlayerScoreEarnPerIncapacitated = gc_PlayerScoreEarnPerIncapacitated.FloatValue;
     PrintToServer("[SourceRank] Player score earn per incapacitated: %f", gv_PlayerScoreEarnPerIncapacitated);
 
-    gv_PlayerScoreStartSurvival = g_PlayerScoreStartSurvival.FloatValue;
+    gv_PlayerScoreStartSurvival = gc_PlayerScoreStartSurvival.FloatValue;
     PrintToServer("[SourceRank] Player score start survival: %f", gv_PlayerScoreStartSurvival);
 
-    gv_PlayerScoreEarnSurvivalPerSecond = g_PlayerScoreEarnSurvivalPerSecond.FloatValue;
+    gv_PlayerScoreEarnSurvivalPerSecond = gc_PlayerScoreEarnSurvivalPerSecond.FloatValue;
     PrintToServer("[SourceRank] Player score earn survival per second: %f", gv_PlayerScoreEarnSurvivalPerSecond);
 
-    gv_PlayerScoreInfectedStartSurvival = g_PlayerScoreInfectedStartSurvival.FloatValue;
+    gv_PlayerScoreInfectedStartSurvival = gc_PlayerScoreInfectedStartSurvival.FloatValue;
     PrintToServer("[SourceRank] Player score infected start survival: %f", gv_PlayerScoreInfectedStartSurvival);
 
-    gv_PlayerScoreInfectedLoseSurvivalPerSecond = g_PlayerScoreInfectedLoseSurvivalPerSecond.FloatValue;
+    gv_PlayerScoreInfectedLoseSurvivalPerSecond = gc_PlayerScoreInfectedLoseSurvivalPerSecond.FloatValue;
     PrintToServer("[SourceRank] Player score infected lose survival per second: %f", gv_PlayerScoreInfectedLoseSurvivalPerSecond);
 
-    gv_RankCount = g_RankCount.IntValue;
+    gv_RankCount = gc_RankCount.IntValue;
     PrintToServer("[SourceRank] Rank count: %d", gv_RankCount);
 
-    g_RankNamesPath.GetString(gv_RankNamesPath, sizeof(gv_RankNamesPath));
+    gc_RankNamesPath.GetString(gv_RankNamesPath, sizeof(gv_RankNamesPath));
     PrintToServer("[SourceRank] Rank names path: %s", gv_RankNamesPath);
 
-    gv_ShouldDebug = g_ShouldDebug.BoolValue;
+    gv_ShouldDebug = gc_ShouldDebug.BoolValue;
     PrintToServer("[SourceRank] Should debug: %b", gv_ShouldDebug);
 
-    gv_ShouldDisplayMenu = g_ShouldDisplayMenu.BoolValue;
+    gv_ShouldDisplayMenu = gc_ShouldDisplayMenu.BoolValue;
     PrintToServer("[SourceRank] Should display menu: %b", gv_ShouldDisplayMenu);
 
-    g_DatabaseConfig.GetString(gv_DatabaseConfig, sizeof(gv_DatabaseConfig));
+    gc_DatabaseConfig.GetString(gv_DatabaseConfig, sizeof(gv_DatabaseConfig));
     PrintToServer("[SourceRank] Database Config: %s", gv_DatabaseConfig);
 
-    gv_ShouldDisplayRank = g_ShouldDisplayRank.BoolValue;
+    gv_ShouldDisplayRank = gc_ShouldDisplayRank.BoolValue;
     PrintToServer("[SourceRank] Should display rank login and disconnections: %b", gv_ShouldDisplayRank);
 }
 
+bool gvf_Hooked_PlayerConnect       = false;
+bool gvf_Hooked_PlayerTeam          = false;
+bool gvf_Hooked_PlayerIncapacitated = false;
+bool gvf_Hooked_PlayerRevive        = false;
+bool gvf_Hooked_PlayerHurt          = false;
+bool gvf_Hooked_PlayerDeath         = false;
+bool gvf_Hooked_VersusRoundStart    = false;
+bool gvf_Hooked_RoundEndVersus      = false;
+bool gvf_Hooked_VersusMarkerReached = false;
+bool gvf_Hooked_SurvivalRoundStart  = false;
+bool gvf_Hooked_RoundEndSurvival    = false;
+bool gvf_Hooked_MapTransition       = false;
+bool gvf_Hooked_MissionLost         = false;
 void ReadConfigs()
 {
     //#region Rank names
@@ -206,10 +219,13 @@ void ReadConfigs()
     //#endregion Rank names
 
     //#region Display Rank
-    UnhookEvent("player_connect", Event_PlayerConnect, EventHookMode_Pre);
     if (gv_ShouldDisplayRank)
     {
-        HookEvent("player_connect", Event_PlayerConnect, EventHookMode_Pre);
+        SafeHook("player_connect", Event_PlayerConnect, EventHookMode_Pre, gvf_Hooked_PlayerConnect);
+    }
+    else
+    {
+        SafeUnhook("player_connect", Event_PlayerConnect, EventHookMode_Pre, gvf_Hooked_PlayerConnect);
     }
     //#endregion Display Rank
 
@@ -219,64 +235,83 @@ void ReadConfigs()
 
     if (StrEqual("left4dead2", game))
     {
-        UnhookEvent("player_team", OnPlayerChangeTeam, EventHookMode_Post);
-        UnhookEvent("player_incapacitated", OnPlayerIncapacitated, EventHookMode_Post);
-        UnhookEvent("revive_success", OnPlayerRevive, EventHookMode_Post);
-        UnhookEvent("player_hurt", OnPlayerHurt, EventHookMode_Post);
-        UnhookEvent("player_death", OnSpecialKill, EventHookMode_Post);
-        UnhookEvent("versus_round_start", RoundStartVersus, EventHookMode_Post);
-        UnhookEvent("round_end", RoundEndVersus, EventHookMode_Post);
-        UnhookEvent("versus_marker_reached", MarkerReached, EventHookMode_Post);
-        UnhookEvent("survival_round_start", RoundStartSurvivalVersus, EventHookMode_Post);
-        UnhookEvent("round_end", RoundEndSurvivalVersus, EventHookMode_Post);
-        UnhookEvent("map_transition", RoundEndCoop, EventHookMode_Post);
-        UnhookEvent("mission_lost", RoundEndLoseCoop, EventHookMode_Post);
+        // Reset seguro
+        SafeUnhook("player_team", OnPlayerChangeTeam, EventHookMode_Post, gvf_Hooked_PlayerTeam);
+        SafeUnhook("player_incapacitated", OnPlayerIncapacitated, EventHookMode_Post, gvf_Hooked_PlayerIncapacitated);
+        SafeUnhook("revive_success", OnPlayerRevive, EventHookMode_Post, gvf_Hooked_PlayerRevive);
+        SafeUnhook("player_hurt", OnPlayerHurt, EventHookMode_Post, gvf_Hooked_PlayerHurt);
+        SafeUnhook("player_death", OnSpecialKill, EventHookMode_Post, gvf_Hooked_PlayerDeath);
+        SafeUnhook("versus_round_start", RoundStartVersus, EventHookMode_Post, gvf_Hooked_VersusRoundStart);
+        SafeUnhook("round_end", RoundEndVersus, EventHookMode_Post, gvf_Hooked_RoundEndVersus);
+        SafeUnhook("versus_marker_reached", MarkerReached, EventHookMode_Post, gvf_Hooked_VersusMarkerReached);
+        SafeUnhook("survival_round_start", RoundStartSurvivalVersus, EventHookMode_Post, gvf_Hooked_SurvivalRoundStart);
+        SafeUnhook("round_end", RoundEndSurvivalVersus, EventHookMode_Post, gvf_Hooked_RoundEndSurvival);
+        SafeUnhook("map_transition", RoundEndCoop, EventHookMode_Post, gvf_Hooked_MapTransition);
+        SafeUnhook("mission_lost", RoundEndLoseCoop, EventHookMode_Post, gvf_Hooked_MissionLost);
 
-        HookEventEx("player_team", OnPlayerChangeTeam, EventHookMode_Post);
-        HookEventEx("player_incapacitated", OnPlayerIncapacitated, EventHookMode_Post);
-        HookEventEx("revive_success", OnPlayerRevive, EventHookMode_Post);
+        // Base hooks
+        SafeHook("player_team", OnPlayerChangeTeam, EventHookMode_Post, gvf_Hooked_PlayerTeam);
+        SafeHook("player_incapacitated", OnPlayerIncapacitated, EventHookMode_Post, gvf_Hooked_PlayerIncapacitated);
+        SafeHook("revive_success", OnPlayerRevive, EventHookMode_Post, gvf_Hooked_PlayerRevive);
 
         GetConVarString(FindConVar("mp_gamemode"), gv_Gamemode, sizeof(gv_Gamemode));
         PrintToServer("[SourceRank] Loaded gamemode: %s", gv_Gamemode);
 
         if (StrEqual(gv_Gamemode, "versus"))
         {
-            PrintToServer("[SourceRank] versus detected");
-            HookEventEx("player_hurt", OnPlayerHurt, EventHookMode_Post);
-            HookEventEx("player_death", OnSpecialKill, EventHookMode_Post);
-            HookEventEx("versus_round_start", RoundStartVersus, EventHookMode_Post);
-            HookEventEx("round_end", RoundEndVersus, EventHookMode_Post);
-            HookEventEx("versus_marker_reached", MarkerReached, EventHookMode_Post);
+            SafeHook("player_hurt", OnPlayerHurt, EventHookMode_Post, gvf_Hooked_PlayerHurt);
+            SafeHook("player_death", OnSpecialKill, EventHookMode_Post, gvf_Hooked_PlayerDeath);
+            SafeHook("versus_round_start", RoundStartVersus, EventHookMode_Post, gvf_Hooked_VersusRoundStart);
+            SafeHook("round_end", RoundEndVersus, EventHookMode_Post, gvf_Hooked_RoundEndVersus);
+            SafeHook("versus_marker_reached", MarkerReached, EventHookMode_Post, gvf_Hooked_VersusMarkerReached);
         }
-        else if (StrEqual(gv_Gamemode, "mutation15")) {
-            PrintToServer("[SourceRank] survival versus detected");
-            HookEventEx("player_hurt", OnPlayerHurt, EventHookMode_Post);
-            HookEventEx("player_death", OnSpecialKill, EventHookMode_Post);
-            HookEventEx("survival_round_start", RoundStartSurvivalVersus, EventHookMode_Post);
-            HookEventEx("round_end", RoundEndSurvivalVersus, EventHookMode_Post);
+        else if (StrEqual(gv_Gamemode, "mutation15"))
+        {
+            SafeHook("player_hurt", OnPlayerHurt, EventHookMode_Post, gvf_Hooked_PlayerHurt);
+            SafeHook("player_death", OnSpecialKill, EventHookMode_Post, gvf_Hooked_PlayerDeath);
+            SafeHook("survival_round_start", RoundStartSurvivalVersus, EventHookMode_Post, gvf_Hooked_SurvivalRoundStart);
+            SafeHook("round_end", RoundEndSurvivalVersus, EventHookMode_Post, gvf_Hooked_RoundEndSurvival);
         }
-        else if (StrEqual(gv_Gamemode, "survival")) {
-            PrintToServer("[SourceRank] survival detected");
-            HookEventEx("player_death", OnSpecialKill, EventHookMode_Post);
-            HookEventEx("survival_round_start", RoundStartSurvivalVersus, EventHookMode_Post);
-            HookEventEx("round_end", RoundEndSurvivalVersus, EventHookMode_Post);
+        else if (StrEqual(gv_Gamemode, "survival"))
+        {
+            SafeHook("player_death", OnSpecialKill, EventHookMode_Post, gvf_Hooked_PlayerDeath);
+            SafeHook("survival_round_start", RoundStartSurvivalVersus, EventHookMode_Post, gvf_Hooked_SurvivalRoundStart);
+            SafeHook("round_end", RoundEndSurvivalVersus, EventHookMode_Post, gvf_Hooked_RoundEndSurvival);
         }
-        else if (StrEqual(gv_Gamemode, "coop")) {
-            PrintToServer("[SourceRank] coop detected");
-            HookEventEx("map_transition", RoundEndCoop, EventHookMode_Post);
-            HookEventEx("mission_lost", RoundEndLoseCoop, EventHookMode_Post);
+        else if (StrEqual(gv_Gamemode, "coop"))
+        {
+            SafeHook("map_transition", RoundEndCoop, EventHookMode_Post, gvf_Hooked_MapTransition);
+            SafeHook("mission_lost", RoundEndLoseCoop, EventHookMode_Post, gvf_Hooked_MissionLost);
         }
         else
-            PrintToServer("[SourceRank] Unsuported gamemode: %s", gv_Gamemode);
-    }
-    else if (StrEqual("nmrih", game)) {
+        {
+            PrintToServer("[SourceRank] Unsupported gamemode: %s", gv_Gamemode);
+        }
     }
     //#endregion Events
 }
 
+void SafeHook(const char[] event, EventHook callback, EventHookMode mode, bool &state)
+{
+    if (!state)
+    {
+        HookEventEx(event, callback, mode);
+        state = true;
+    }
+}
+
+void SafeUnhook(const char[] event, EventHook callback, EventHookMode mode, bool &state)
+{
+    if (state)
+    {
+        UnhookEvent(event, callback, mode);
+        state = false;
+    }
+}
+
 public void OnPluginStart()
 {
-    g_ShouldDebug = CreateConVar(
+    gc_ShouldDebug = CreateConVar(
         "rankShouldDebug",
         "0",
         "Enable debug logging",
@@ -286,7 +321,7 @@ public void OnPluginStart()
         true,
         1.0);
 
-    g_ShouldDisplayMenu = CreateConVar(
+    gc_ShouldDisplayMenu = CreateConVar(
         "rankDisableAutoMenu",
         "1",
         "If 0, disables the rank menu on player join",
@@ -296,7 +331,7 @@ public void OnPluginStart()
         true,
         1.0);
 
-    g_PlayerMaxScore = CreateConVar(
+    gc_PlayerMaxScore = CreateConVar(
         "rankPlayerMaxScore",
         "10.0",
         "Maximum score a player can earn per round",
@@ -306,7 +341,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreLoseOnRoundLose = CreateConVar(
+    gc_PlayerScoreLoseOnRoundLose = CreateConVar(
         "rankPlayerScoreLoseOnRoundLose",
         "5.0",
         "Score lost on round lose",
@@ -316,7 +351,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreEarnOnMarker = CreateConVar(
+    gc_PlayerScoreEarnOnMarker = CreateConVar(
         "rankPlayerScoreEarnOnMarker",
         "2.0",
         "Score earned on marker reached",
@@ -326,7 +361,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreEarnOnRoundWin = CreateConVar(
+    gc_PlayerScoreEarnOnRoundWin = CreateConVar(
         "rankPlayerScoreEarnOnRoundWin",
         "2.0",
         "Score earned on round win",
@@ -336,7 +371,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreEarnPerSurvivorHurt = CreateConVar(
+    gc_PlayerScoreEarnPerSurvivorHurt = CreateConVar(
         "rankPlayerScoreEarnPerSurvivorHurt",
         "0.02",
         "Score earned per damage dealt to a survivor",
@@ -346,7 +381,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreEarnPerSpecialKill = CreateConVar(
+    gc_PlayerScoreEarnPerSpecialKill = CreateConVar(
         "rankPlayerScoreEarnPerSpecialKill",
         "0.2",
         "Score earned per special infected killed",
@@ -356,7 +391,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreEarnPerRevive = CreateConVar(
+    gc_PlayerScoreEarnPerRevive = CreateConVar(
         "rankPlayerScoreEarnPerRevive",
         "0.5",
         "Score earned per revive",
@@ -366,7 +401,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreLosePerIncapacitated = CreateConVar(
+    gc_PlayerScoreLosePerIncapacitated = CreateConVar(
         "rankPlayerScoreLosePerIncapacitated",
         "0.5",
         "Score lost when incapacitated",
@@ -376,7 +411,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreEarnPerIncapacitated = CreateConVar(
+    gc_PlayerScoreEarnPerIncapacitated = CreateConVar(
         "rankPlayerScoreEarnPerIncapacitated",
         "0.5",
         "Score earned for incapacitating a survivor",
@@ -386,7 +421,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreStartSurvival = CreateConVar(
+    gc_PlayerScoreStartSurvival = CreateConVar(
         "rankPlayerScoreStartSurvival",
         "-3.0",
         "Base score for survivors at round end in survival",
@@ -396,7 +431,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreEarnSurvivalPerSecond = CreateConVar(
+    gc_PlayerScoreEarnSurvivalPerSecond = CreateConVar(
         "rankPlayerScoreEarnSurvivalPerSecond",
         "0.01",
         "Score earned per second survived",
@@ -406,7 +441,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreInfectedStartSurvival = CreateConVar(
+    gc_PlayerScoreInfectedStartSurvival = CreateConVar(
         "rankPlayerScoreInfectedStartSurvival",
         "6.0",
         "Base score for infected at round end in survival",
@@ -416,7 +451,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_PlayerScoreInfectedLoseSurvivalPerSecond = CreateConVar(
+    gc_PlayerScoreInfectedLoseSurvivalPerSecond = CreateConVar(
         "rankPlayerScoreInfectedLoseSurvivalPerSecond",
         "0.01",
         "Score lost per second for infected in survival",
@@ -426,7 +461,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_RankCount = CreateConVar(
+    gc_RankCount = CreateConVar(
         "rankCount",
         "7",
         "Number of ranks",
@@ -436,7 +471,7 @@ public void OnPluginStart()
         true,
         99.0);
 
-    g_RankNamesPath = CreateConVar(
+    gc_RankNamesPath = CreateConVar(
         "rankNamesPath",
         "addons/sourcemod/configs/source_rank.cfg",
         "Rank names file path",
@@ -446,7 +481,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_DatabaseConfig = CreateConVar(
+    gc_DatabaseConfig = CreateConVar(
         "rankDatabaseConfig",
         "sourcerank",
         "Database config name",
@@ -456,7 +491,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    g_ShouldDisplayRank = CreateConVar(
+    gc_ShouldDisplayRank = CreateConVar(
         "rankShouldDisplayRank",
         "1",
         "Should display the rank in login and chats",
@@ -949,7 +984,7 @@ public void OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
             return;
         }
 
-        int   totalDamage = event.GetInt("dmg_health");
+        int   totalDamage = event.GetInt("dmgc_health");
         float earnedMMR   = gv_PlayerScoreEarnPerSurvivorHurt * totalDamage;
 
         gv_PlayersScores[infectedClient] += earnedMMR;
