@@ -1107,12 +1107,6 @@ public void OnSpecialKill(Event event, const char[] name, bool dontBroadcast)
             PrintToServer("[SourceRank] %d wrong victim name: %s", clientAttacker, victimname);
     }
 }
-
-public void OnMapStart()
-{
-    ReadVariables();
-    ReadConfigs();
-}
 //
 // #endregion Events
 //
