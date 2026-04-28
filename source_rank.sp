@@ -126,7 +126,6 @@ void   ReadVariables()
     PrintToServer("[SourceRank] Should display rank login and disconnections: %b", gv_ShouldDisplayRank);
 }
 
-bool gvf_Hooked_PlayerConnect       = false;
 bool gvf_Hooked_PlayerTeam          = false;
 bool gvf_Hooked_PlayerIncapacitated = false;
 bool gvf_Hooked_PlayerRevive        = false;
@@ -217,17 +216,6 @@ void ReadConfigs()
         }
     }
     //#endregion Rank names
-
-    //#region Display Rank
-    if (gv_ShouldDisplayRank)
-    {
-        SafeHook("player_connect", Event_PlayerConnect, EventHookMode_Pre, gvf_Hooked_PlayerConnect);
-    }
-    else
-    {
-        SafeUnhook("player_connect", Event_PlayerConnect, EventHookMode_Pre, gvf_Hooked_PlayerConnect);
-    }
-    //#endregion Display Rank
 
     //#region Events
     char game[64];
@@ -541,16 +529,10 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
         teamTag[0] = '\0';
 
     if (teamTag[0] != '\0')
-        Format(name, MAXLENGTH_NAME, "[%s] %s%s %s", gv_PlayerRankNameCache[author], colorPrefix, name, teamTag);
+        Format(name, MAXLENGTH_NAME, "[%s] %s%s \x01%s", gv_PlayerRankNameCache[author], colorPrefix, name, teamTag);
     else
         Format(name, MAXLENGTH_NAME, "[%s] %s%s", gv_PlayerRankNameCache[author], colorPrefix, name);
 
-    return Plugin_Changed;
-}
-
-public Action Event_PlayerConnect(Event event, const char[] name, bool dontBroadcast)
-{
-    event.BroadcastDisabled = false;
     return Plugin_Changed;
 }
 
@@ -583,7 +565,7 @@ public void OnClientPutInServer(int client)
     SQL_TQuery(database, DisplayRankLogin_Callback, query, client, DBPrio_High);
 }
 
-stock void DisplayRankLogin_Callback(
+void DisplayRankLogin_Callback(
     Database    db,
     DBResultSet results,
     const char[] error,
@@ -611,8 +593,6 @@ stock void DisplayRankLogin_Callback(
 
             char rankName[128];
             GetRankNameFromRank(StringToInt(rank), rankName, sizeof(rankName));
-
-            PrintToChatAll("[%s] %s Joined the server", rankName, name);
 
             gv_PlayerRankNameCache[client] = rankName;
         }
