@@ -9,7 +9,7 @@ Creates a ranking system that works across multiple servers.
 - [No More Room in Hell] End of objective or round show the survivor MVP (Most scores) (TO DO)
 
 ## Requirements
-- If ``rankDisplayRank`` is enabled [scp](https://bitbucket.org/minimoney1/simple-chat-processor/src/master/) is required
+- If ``rankDisplayRank`` is enabled [chat-processor](https://github.com/KeithGDR/chat-processor) is required
 - [Any Sourcemod compatible Database](https://www.mysql.com/)
 - Sourcemod and metamod
 

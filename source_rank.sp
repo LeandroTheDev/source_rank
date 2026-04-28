@@ -291,7 +291,7 @@ void ReadConfigs()
     //#endregion Events
 }
 
-void SafeHook(const char[] event, EventHook callback, EventHookMode mode, bool &state)
+void SafeHook(const char[] event, EventHook callback, EventHookMode mode, bool& state)
 {
     if (!state)
     {
@@ -300,7 +300,7 @@ void SafeHook(const char[] event, EventHook callback, EventHookMode mode, bool &
     }
 }
 
-void SafeUnhook(const char[] event, EventHook callback, EventHookMode mode, bool &state)
+void SafeUnhook(const char[] event, EventHook callback, EventHookMode mode, bool& state)
 {
     if (state)
     {
@@ -513,15 +513,37 @@ public void OnPluginStart()
 //
 // #region Events
 //
-public Action OnChatMessage(int &author, Handle recipients, char[] name, char[] message)
+public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
 {
+    if (!IsClientInGame(author))
+        return Plugin_Continue;
     if (!gv_ShouldDisplayRank)
         return Plugin_Continue;
 
-    if (!IsClientInGame(author))
-        return Plugin_Continue;
+    char colorPrefix[4];
+    if (name[0] == '\x03' || name[0] == '\x01' || name[0] == '\x04')
+    {
+        colorPrefix[0] = name[0];
+        colorPrefix[1] = '\0';
+    }
+    else
+    {
+        colorPrefix[0] = '\x03';
+        colorPrefix[1] = '\0';
+    }
 
-    Format(name, MAXLENGTH_NAME, "[%s] %s", gv_PlayerRankNameCache[author], name);
+    char teamTag[16];
+    if (StrContains(flagstring, "Infected", false) != -1)
+        strcopy(teamTag, sizeof(teamTag), "(Infected)");
+    else if (StrContains(flagstring, "Survivor", false) != -1)
+        strcopy(teamTag, sizeof(teamTag), "(Survivor)");
+    else
+        teamTag[0] = '\0';
+
+    if (teamTag[0] != '\0')
+        Format(name, MAXLENGTH_NAME, "[%s] %s%s %s", gv_PlayerRankNameCache[author], colorPrefix, name, teamTag);
+    else
+        Format(name, MAXLENGTH_NAME, "[%s] %s%s", gv_PlayerRankNameCache[author], colorPrefix, name);
 
     return Plugin_Changed;
 }
