@@ -6,13 +6,14 @@ public Plugin myinfo =
     name        = "Source Rank",
     author      = "LeandroTheDev",
     description = "Player rank system",
-    version     = "2.0",
+    version     = "2.1",
     url         = "https://github.com/LeandroTheDev/source_rank"
 };
 
 float  gv_PlayersScores[MAXPLAYERS];
 int    gv_PlayerSpecialInfectedKilled[MAXPLAYERS];
 char   gv_PlayerRankNameCache[MAXPLAYERS][128];
+int    gv_PlayerTokens[MAXPLAYERS];
 
 // Configurations
 float  gv_PlayerMaxScore                           = 10.0;
@@ -168,6 +169,9 @@ bool gvf_Hooked_Objective_ObjectiveComplete  = false;
 bool gvf_Hooked_Objective_PracticeEnding     = false;
 bool gvf_Hooked_Objective_RoundStart         = false;
 bool gvf_Hooked_Objective_ExtractionComplete = false;
+bool gvf_Hooked_PlayerDie                    = false;
+bool gvf_Hooked_PlayerSpawn                  = false;
+bool gvf_Hooked_PlayerTokenEarned            = false;
 void ReadConfigs()
 {
     //#region Rank names
@@ -319,6 +323,13 @@ void ReadConfigs()
         SafeUnhook("nmrih_practice_ending", OnObjectivePracticeEnded, EventHookMode_Post, gvf_Hooked_Objective_PracticeEnding);
         SafeUnhook("round_start", OnObjectiveRoundStart, EventHookMode_Post, gvf_Hooked_Objective_RoundStart);
         SafeUnhook("extraction_complete", OnObjectiveExtractionComplete, EventHookMode_Post, gvf_Hooked_Objective_ExtractionComplete);
+        SafeUnhook("player_death", OnPlayerDie, EventHookMode_Post, gvf_Hooked_PlayerDie);
+        SafeUnhook("player_spawn", OnPlayerSpawn, EventHookMode_Post, gvf_Hooked_PlayerSpawn);
+        SafeUnhook("token_earned", OnPlayerReceiveToken, EventHookMode_Post, gvf_Hooked_PlayerTokenEarned);
+
+        SafeHook("player_death", OnPlayerDie, EventHookMode_Post, gvf_Hooked_PlayerDie);
+        SafeHook("player_spawn", OnPlayerSpawn, EventHookMode_Post, gvf_Hooked_PlayerSpawn);
+        SafeHook("token_earned", OnPlayerReceiveToken, EventHookMode_Post, gvf_Hooked_PlayerTokenEarned);
 
         if (StrContains(mapName, "nms_") == 0)
         {
@@ -336,7 +347,7 @@ void ReadConfigs()
             SafeHook("extraction_complete", OnObjectiveExtractionComplete, EventHookMode_Post, gvf_Hooked_Objective_ExtractionComplete);
         }
         else {
-            PrintToServer("Unsupported map prefix: %s", mapName)
+            PrintToServer("Unsupported map prefix: %s", mapName);
         }
     }
     //#endregion Events
@@ -532,7 +543,7 @@ public void OnPluginStart()
         false,
         0.0);
 
-    gc_PlayerScoreWaveSurvived = CreateConVar(
+    gc_PlayerScorePerScore = CreateConVar(
         "rankPlayerScorePerScore",
         "0.1",
         "Ingame score converted to mmr",
@@ -589,6 +600,11 @@ public void OnPluginStart()
     RegConsoleCmd("rank", CommandViewRank, "View your rank");
 
     PrintToServer("[SourceRank] Initialized");
+}
+
+public void OnMapStart()
+{
+    ReadConfigs();
 }
 
 //
@@ -801,7 +817,6 @@ public void RoundEndVersus(Event event, const char[] name, bool dontBroadcast)
         }
     }
 
-    int survivorsMVP[MVP_COUNT];
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         int client = onlinePlayers[i];
@@ -810,24 +825,6 @@ public void RoundEndVersus(Event event, const char[] name, bool dontBroadcast)
         if (!IsValidClient(client)) continue;
 
         int team = GetClientTeam(client);
-
-        if (team == 2)
-        {
-            int kills = gv_PlayerSpecialInfectedKilled[client];
-            if (kills > gv_PlayerSpecialInfectedKilled[survivorsMVP[0]])
-            {
-                survivorsMVP[2] = survivorsMVP[1];
-                survivorsMVP[1] = survivorsMVP[0];
-                survivorsMVP[0] = client;
-            }
-            else if (kills > gv_PlayerSpecialInfectedKilled[survivorsMVP[1]]) {
-                survivorsMVP[2] = survivorsMVP[1];
-                survivorsMVP[1] = client;
-            }
-            else if (kills > gv_PlayerSpecialInfectedKilled[survivorsMVP[2]]) {
-                survivorsMVP[2] = client;
-            }
-        }
 
         if (team == winner)
         {
@@ -842,26 +839,9 @@ public void RoundEndVersus(Event event, const char[] name, bool dontBroadcast)
                 PrintToServer("[SourceRank] [RoundEndVersus] %d Losed: %f for losing", client, gv_PlayerScoreLoseOnRoundLose);
         }
         PrintToServer("[SourceRank] Player: %d, team: %d, score: %f", client, team, gv_PlayersScores[client]);
-
-        CheckMaxScore(client);
-
-        UploadMMR(client, gv_PlayersScores[client]);
     }
 
-    PrintToChatAll("[SourceRank] Survivors Special Infected MVP:");
-    for (int i = 0; i < MVP_COUNT; i++)
-    {
-        int client = survivorsMVP[i];
-        if (IsValidClient(client))
-        {
-            char clientUsername[128];
-            GetClientName(client, clientUsername, sizeof(clientUsername));
-
-            PrintToChatAll("[%d] %s: %d", i + 1, clientUsername, gv_PlayerSpecialInfectedKilled[client]);
-        }
-    }
-
-    ClearPlayerScores();
+    ShowMVPsAndUploadMMR();
 }
 
 public void RoundEndSurvivalVersus(Event event, const char[] name, bool dontBroadcast)
@@ -887,7 +867,6 @@ public void RoundEndSurvivalVersus(Event event, const char[] name, bool dontBroa
     int onlinePlayers[MAXPLAYERS];
     GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
 
-    int survivorsMVP[3];
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         int client = onlinePlayers[i];
@@ -901,21 +880,6 @@ public void RoundEndSurvivalVersus(Event event, const char[] name, bool dontBroa
         {
             gv_PlayersScores[client] += GetRankEarnByTimeStampSurvival();
 
-            int kills = gv_PlayerSpecialInfectedKilled[client];
-            if (kills > gv_PlayerSpecialInfectedKilled[survivorsMVP[0]])
-            {
-                survivorsMVP[2] = survivorsMVP[1];
-                survivorsMVP[1] = survivorsMVP[0];
-                survivorsMVP[0] = client;
-            }
-            else if (kills > gv_PlayerSpecialInfectedKilled[survivorsMVP[1]]) {
-                survivorsMVP[2] = survivorsMVP[1];
-                survivorsMVP[1] = client;
-            }
-            else if (kills > gv_PlayerSpecialInfectedKilled[survivorsMVP[2]]) {
-                survivorsMVP[2] = client;
-            }
-
             if (gv_ShouldDebug)
                 PrintToServer("[SourceRank] [RoundEndSurvivalVersus] %d SUpdated rank: %f", client, GetRankEarnByTimeStampSurvival());
         }
@@ -926,26 +890,9 @@ public void RoundEndSurvivalVersus(Event event, const char[] name, bool dontBroa
                 PrintToServer("[SourceRank] [RoundEndSurvivalVersus] %d IUpdated rank: %f", client, GetRankEarnByTimeStampInfected());
         }
         PrintToServer("[SourceRank] Player: %d, team: %d, score: %d", client, team, gv_PlayersScores[client]);
-
-        CheckMaxScore(client);
-
-        UploadMMR(client, gv_PlayersScores[client]);
     }
 
-    PrintToChatAll("[SourceRank] Survivors Special Infected MVP:");
-    for (int i = 0; i < MVP_COUNT; i++)
-    {
-        int client = survivorsMVP[i];
-        if (IsValidClient(client))
-        {
-            char clientUsername[128];
-            GetClientName(client, clientUsername, sizeof(clientUsername));
-
-            PrintToChatAll("[%d] %s: %d", i + 1, clientUsername, gv_PlayerSpecialInfectedKilled[client]);
-        }
-    }
-
-    ClearPlayerScores();
+    ShowMVPsAndUploadMMR();
 }
 
 public void RoundEndCoop(Event event, const char[] name, bool dontBroadcast)
@@ -1194,7 +1141,7 @@ public void OnSpecialKill(Event event, const char[] name, bool dontBroadcast)
         if (gv_ShouldDebug)
             PrintToServer("[SourceRank] [OnSpecialKill] %d received %f for killing: %s", clientAttacker, gv_PlayerScoreEarnPerSpecialKill, victimname);
         gv_PlayersScores[clientAttacker] += gv_PlayerScoreEarnPerSpecialKill;
-        gv_PlayerSpecialInfectedKilled[clientAttacker] += 1
+        gv_PlayerSpecialInfectedKilled[clientAttacker] += 1;
     }
     else
     {
@@ -1215,27 +1162,60 @@ public OnServerExitHibernation()
 
 public void OnPlayerDie(Event event, const char[] name, bool dontBroadcast)
 {
-    int userid                 = event.GetInt("userid");
-    int client                 = GetClientOfUserId(userid);
+    int userid = event.GetInt("userid");
+    int client = GetClientOfUserId(userid);
+
+    if (client == 0)
+        return;
+
+    if (gv_PlayerTokens[client] > 0)
+    {
+        gv_PlayerTokens[client]--;
+        return;
+    }
 
     gv_LastPlayerScore[client] = GetClientFrags(client);
     gv_IsDeadPlayer[client]    = true;
 
     PrintToServer("[SourceRank-OnPlayerDie] Player died %d", userid);
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i))
+            continue;
+
+        if (!gv_IsDeadPlayer[i])
+            return;
+    }
+
+    PrintToServer("[SourceRank-OnPlayerDie] All players dead, processing scores");
+    ShowMVPsAndUploadMMR();
+}
+
+public void OnPlayerReceiveToken(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = event.GetInt("player_id");
+    if (client > 0)
+        gv_PlayerTokens[client] = event.GetInt("tokens");
 }
 
 public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-    int userid              = event.GetInt("userid");
-    int client              = GetClientOfUserId(userid);
+    int userid = event.GetInt("userid");
+    int client = GetClientOfUserId(userid);
+
+    if (client == 0)
+        return;
 
     gv_IsDeadPlayer[client] = false;
+    gv_PlayerTokens[client] = 0;
     PrintToServer("[SourceRank-OnPlayerSpawn] Player spawned %d", userid);
 }
 
 public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 {
     gv_IsDeadPlayer[client] = true;
+    gv_PlayerTokens[client] = 0;
 
     return true;
 }
@@ -1286,6 +1266,7 @@ public void OnObjectiveComplete(Event event, const char[] name, bool dontBroadca
 
     int onlinePlayers[MAXPLAYERS];
     GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         int client = onlinePlayers[i];
@@ -1295,13 +1276,13 @@ public void OnObjectiveComplete(Event event, const char[] name, bool dontBroadca
         {
             char playerName[32];
             GetClientName(client, playerName, sizeof(playerName));
-            PrintToServer("[PTEC-OnObjectiveComplete] Ignoring %s because he is dead", playerName);
+            PrintToServer("[SourceRank-OnObjectiveComplete] Ignoring %s because he is dead", playerName);
             continue;
         }
 
         // Objective reward
         {
-            // Added score
+            gv_PlayersScores[client] += gv_PlayerScoreObjectiveComplete;
         }
 
         // Score reward
@@ -1310,11 +1291,11 @@ public void OnObjectiveComplete(Event event, const char[] name, bool dontBroadca
             gv_LastPlayerScore[client] = GetClientFrags(client);
             PrintToServer("[SourceRank-OnObjectiveComplete] %d scored: %d, in this round, total: %d", client, scoreDifference, GetClientFrags(client));
             if (scoreDifference > 0)
-            {
-                // Check the best player
-            }
+                gv_PlayersScores[client] += scoreDifference * gv_PlayerScorePerScore;
         }
     }
+
+    ShowMVPsAndUploadMMR();
 
     gv_ObjectivesCompleted++;
 }
@@ -1355,12 +1336,13 @@ public void OnObjectiveExtractionComplete(Event event, const char[] name, bool d
 {
     int onlinePlayers[MAXPLAYERS];
     GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         int client = onlinePlayers[i];
         if (client == 0) break;
 
-        if (IsPlayerAlive(client))
+        if (!IsPlayerAlive(client))
         {
             char playerName[32];
             GetClientName(client, playerName, sizeof(playerName));
@@ -1370,20 +1352,20 @@ public void OnObjectiveExtractionComplete(Event event, const char[] name, bool d
 
         // Objective reward
         {
-            // Added score
+            gv_PlayersScores[client] += gv_PlayerScoreObjectiveComplete;
         }
 
         // Score reward
         {
             int scoreDifference        = GetClientFrags(client) - gv_LastPlayerScore[client];
             gv_LastPlayerScore[client] = GetClientFrags(client);
-            PrintToServer("[PTEC-OnExtractionComplete] %d scored: %d, in this round, total: %d", client, scoreDifference, GetClientFrags(client));
+            PrintToServer("[SourceRank-OnExtractionComplete] %d scored: %d, in this round, total: %d", client, scoreDifference, GetClientFrags(client));
             if (scoreDifference > 0)
-            {
-                // Check the best player
-            }
+                gv_PlayersScores[client] += scoreDifference * gv_PlayerScorePerScore;
         }
     }
+
+    ShowMVPsAndUploadMMR();
 }
 //#endregion Objective
 
@@ -1441,6 +1423,7 @@ public void OnSurvivalWaveFinish()
 {
     int onlinePlayers[MAXPLAYERS];
     GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+
     for (int i = 0; i < MAXPLAYERS; i++)
     {
         int client = onlinePlayers[i];
@@ -1456,20 +1439,20 @@ public void OnSurvivalWaveFinish()
 
         // Wave survival reward
         {
-            // Added score
+            gv_PlayersScores[client] += gv_PlayerScoreWaveSurvived;
         }
 
         // Score reward
         {
             int scoreDifference        = GetClientFrags(client) - gv_LastPlayerScore[client];
             gv_LastPlayerScore[client] = GetClientFrags(client);
-            PrintToServer("[PTEC-OnSurvivalWaveFinish] %d scored: %d, in this round, total: %d", client, scoreDifference, GetClientFrags(client));
+            PrintToServer("[SourceRank-OnSurvivalWaveFinish] %d scored: %d, in this round, total: %d", client, scoreDifference, GetClientFrags(client));
             if (scoreDifference > 0)
-            {
-                // Check best player
-            }
+                gv_PlayersScores[client] += scoreDifference * gv_PlayerScorePerScore;
         }
     }
+
+    ShowMVPsAndUploadMMR();
 
     PrintToServer("[SourceRank-OnSurvivalWaveFinish] Wave %d Finished", gv_ServerWave);
 }
@@ -1524,6 +1507,50 @@ public Action CommandViewRank(int client, int args)
 //
 // #region Utils
 //
+stock void ShowMVPsAndUploadMMR()
+{
+    int survivorsMVP[MVP_COUNT];
+
+    int onlinePlayers[MAXPLAYERS];
+    GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        int client = onlinePlayers[i];
+        if (client == 0) break;
+
+        if (gv_PlayersScores[client] > gv_PlayersScores[survivorsMVP[0]])
+        {
+            survivorsMVP[2] = survivorsMVP[1];
+            survivorsMVP[1] = survivorsMVP[0];
+            survivorsMVP[0] = client;
+        }
+        else if (gv_PlayersScores[client] > gv_PlayersScores[survivorsMVP[1]]) {
+            survivorsMVP[2] = survivorsMVP[1];
+            survivorsMVP[1] = client;
+        }
+        else if (gv_PlayersScores[client] > gv_PlayersScores[survivorsMVP[2]]) {
+            survivorsMVP[2] = client;
+        }
+
+        CheckMaxScore(client);
+        UploadMMR(client, gv_PlayersScores[client]);
+    }
+
+    PrintToChatAll("MVP:");
+    for (int i = 0; i < MVP_COUNT; i++)
+    {
+        int client = survivorsMVP[i];
+        if (IsValidClient(client))
+        {
+            char clientUsername[128];
+            GetClientName(client, clientUsername, sizeof(clientUsername));
+            PrintToChatAll("[%d] %s: %.1f Score", i + 1, clientUsername, gv_PlayersScores[client]);
+        }
+    }
+
+    ClearPlayerScores();
+}
+
 stock float GetRankEarnByTimeStampSurvival()
 {
     float result    = gv_PlayerScoreStartSurvival;
@@ -1670,7 +1697,7 @@ stock void UploadMMR_Callback(
     }
 
     PrintToServer("[SourceRank] Updated %d mmr to: %d", client, mmr);
-    PrintToChat(client, "[SourceRank] %d MMR", mmr);
+    PrintToChat(client, "Received: %d MMR", mmr);
 }
 
 stock void RegisterPlayer(const int client)

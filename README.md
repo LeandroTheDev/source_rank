@@ -68,11 +68,12 @@ Creates a ranking system that works across multiple servers.
 }
 ```
 
-4. Create the database and table, table must be ``left4dead2`` because the plugin use the game name as table
+4. Create the database and table, table must be ``left4dead2``/``nmrih`` because the plugin use the game name as table
 ```sql
-CREATE mydatabase
-USE mydatabase
-CREATE TABLE left4dead2 (
+GRANT ALL PRIVILEGES ON sourcerank.* TO 'sourcerank_admin'@'localhost' IDENTIFIED BY '3Dyp6OZRrz7Qma2NY0re3mKIi84XnWv3n2FgsTF67jtiKXC2J8' WITH GRANT OPTION; FLUSH PRIVILEGES;
+CREATE DATABASE sourcerank;
+USE sourcerank;
+CREATE TABLE gamename (
     uniqueid VARCHAR(255) NOT NULL PRIMARY KEY,
     rank DECIMAL(50, 0) NOT NULL DEFAULT 0
 );
