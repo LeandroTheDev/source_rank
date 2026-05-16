@@ -6,7 +6,7 @@ public Plugin myinfo =
     name        = "Source Rank",
     author      = "LeandroTheDev",
     description = "Player rank system",
-    version     = "2.1",
+    version     = "2.2",
     url         = "https://github.com/LeandroTheDev/source_rank"
 };
 
@@ -637,10 +637,16 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
     else
         teamTag[0] = '\0';
 
-    if (teamTag[0] != '\0')
-        Format(name, MAXLENGTH_NAME, "[%s] %s%s \x01%s", gv_PlayerRankNameCache[author], colorPrefix, name, teamTag);
+    char rankDisplay[128];
+    if (gv_PlayerRankNameCache[author][0] != '\0')
+        strcopy(rankDisplay, sizeof(rankDisplay), gv_PlayerRankNameCache[author]);
     else
-        Format(name, MAXLENGTH_NAME, "[%s] %s%s", gv_PlayerRankNameCache[author], colorPrefix, name);
+        strcopy(rankDisplay, sizeof(rankDisplay), gv_RankNames[0]);
+
+    if (teamTag[0] != '\0')
+        Format(name, MAXLENGTH_NAME, "[%s] %s%s \x01%s", rankDisplay, colorPrefix, name, teamTag);
+    else
+        Format(name, MAXLENGTH_NAME, "[%s] %s%s", rankDisplay, colorPrefix, name);
 
     return Plugin_Changed;
 }
@@ -1698,6 +1704,19 @@ stock void UploadMMR_Callback(
 
     PrintToServer("[SourceRank] Updated %d mmr to: %d", client, mmr);
     PrintToChat(client, "Received: %d MMR", mmr);
+
+    if (!IsValidClient(client)) return;
+
+    int steamid = GetSteamAccountID(client);
+    if (steamid == 0) return;
+
+    Database db2 = CreateDatabaseConnection();
+    if (db2 == null) return;
+
+    char game[64], query[256];
+    GetGameFolderName(game, sizeof(game));
+    Format(query, sizeof(query), "SELECT rank FROM `%s` WHERE uniqueid = %d", game, steamid);
+    SQL_TQuery(db2, DisplayRankLogin_Callback, query, client, DBPrio_High);
 }
 
 stock void RegisterPlayer(const int client)
