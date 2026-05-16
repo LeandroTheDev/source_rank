@@ -28,6 +28,9 @@ float  gv_PlayerScoreStartSurvival                 = -3.0;
 float  gv_PlayerScoreEarnSurvivalPerSecond         = 0.01;
 float  gv_PlayerScoreInfectedStartSurvival         = 6.0;
 float  gv_PlayerScoreInfectedLoseSurvivalPerSecond = 0.01;
+float  gv_PlayerScoreObjectiveComplete             = 1.0;
+float  gv_PlayerScoreWaveSurvived                  = 1.0;
+float  gv_PlayerScorePerScore                      = 0.1;
 
 int    gv_RankCount                                = 7;
 char   gv_RankNamesPath[PLATFORM_MAX_PATH]         = "addons/sourcemod/configs/source_rank.cfg";
@@ -37,12 +40,18 @@ char   gv_Gamemode[64];
 
 int    gv_TimeStampSurvived;
 Handle gv_TimeStampSurvivedTimer = INVALID_HANDLE;
+int    gv_LastPlayerScore[MAXPLAYERS];
+int    gv_IsDeadPlayer[MAXPLAYERS];
+int    gv_ObjectivesCompleted = 0;
+bool   gv_ObjectiveInCooldown = false;
+float  gv_ObjectiveCooldown   = 5.0;
+int    gv_ServerWave          = 0;
 
-bool   gv_ShouldDebug            = false;
-bool   gv_ShouldDisplayMenu      = true;
-bool   gv_ShouldDisplayRank      = true;
+bool   gv_ShouldDebug         = false;
+bool   gv_ShouldDisplayMenu   = true;
+bool   gv_ShouldDisplayRank   = true;
 
-char   gv_DatabaseConfig[128]    = "sourcerank";
+char   gv_DatabaseConfig[128] = "sourcerank";
 
 #define MVP_COUNT 3
 
@@ -59,6 +68,9 @@ ConVar gc_PlayerScoreStartSurvival;
 ConVar gc_PlayerScoreEarnSurvivalPerSecond;
 ConVar gc_PlayerScoreInfectedStartSurvival;
 ConVar gc_PlayerScoreInfectedLoseSurvivalPerSecond;
+ConVar gc_PlayerScoreObjectiveComplete;
+ConVar gc_PlayerScoreWaveSurvived;
+ConVar gc_PlayerScorePerScore;
 ConVar gc_RankCount;
 ConVar gc_RankNamesPath;
 ConVar gc_ShouldDebug;
@@ -107,6 +119,15 @@ void   ReadVariables()
     gv_PlayerScoreInfectedLoseSurvivalPerSecond = gc_PlayerScoreInfectedLoseSurvivalPerSecond.FloatValue;
     PrintToServer("[SourceRank] Player score infected lose survival per second: %f", gv_PlayerScoreInfectedLoseSurvivalPerSecond);
 
+    gv_PlayerScoreObjectiveComplete = gc_PlayerScoreObjectiveComplete.FloatValue;
+    PrintToServer("[SourceRank] Player score objective complete: %f", gv_PlayerScoreObjectiveComplete);
+
+    gv_PlayerScoreWaveSurvived = gc_PlayerScoreWaveSurvived.FloatValue;
+    PrintToServer("[SourceRank] Player score wave survived: %f", gv_PlayerScoreWaveSurvived);
+
+    gv_PlayerScorePerScore = gc_PlayerScorePerScore.FloatValue;
+    PrintToServer("[SourceRank] Player score per score: %f", gv_PlayerScorePerScore);
+
     gv_RankCount = gc_RankCount.IntValue;
     PrintToServer("[SourceRank] Rank count: %d", gv_RankCount);
 
@@ -126,18 +147,27 @@ void   ReadVariables()
     PrintToServer("[SourceRank] Should display rank login and disconnections: %b", gv_ShouldDisplayRank);
 }
 
-bool gvf_Hooked_PlayerTeam          = false;
-bool gvf_Hooked_PlayerIncapacitated = false;
-bool gvf_Hooked_PlayerRevive        = false;
-bool gvf_Hooked_PlayerHurt          = false;
-bool gvf_Hooked_PlayerDeath         = false;
-bool gvf_Hooked_VersusRoundStart    = false;
-bool gvf_Hooked_RoundEndVersus      = false;
-bool gvf_Hooked_VersusMarkerReached = false;
-bool gvf_Hooked_SurvivalRoundStart  = false;
-bool gvf_Hooked_RoundEndSurvival    = false;
-bool gvf_Hooked_MapTransition       = false;
-bool gvf_Hooked_MissionLost         = false;
+bool gvf_Hooked_PlayerTeam                   = false;
+bool gvf_Hooked_PlayerIncapacitated          = false;
+bool gvf_Hooked_PlayerRevive                 = false;
+bool gvf_Hooked_PlayerHurt                   = false;
+bool gvf_Hooked_PlayerDeath                  = false;
+bool gvf_Hooked_VersusRoundStart             = false;
+bool gvf_Hooked_RoundEndVersus               = false;
+bool gvf_Hooked_VersusMarkerReached          = false;
+bool gvf_Hooked_SurvivalRoundStart           = false;
+bool gvf_Hooked_RoundEndSurvival             = false;
+bool gvf_Hooked_MapTransition                = false;
+bool gvf_Hooked_MissionLost                  = false;
+bool gvf_Hooked_Survival_NewWave             = false;
+bool gvf_Hooked_Survival_RoundBegin          = false;
+bool gvf_Hooked_Survival_ExtractionBegin     = false;
+bool gvf_Hooked_Survival_PracticeEnding      = false;
+bool gvf_Hooked_Objective_ObjectiveBegin     = false;
+bool gvf_Hooked_Objective_ObjectiveComplete  = false;
+bool gvf_Hooked_Objective_PracticeEnding     = false;
+bool gvf_Hooked_Objective_RoundStart         = false;
+bool gvf_Hooked_Objective_ExtractionComplete = false;
 void ReadConfigs()
 {
     //#region Rank names
@@ -274,6 +304,39 @@ void ReadConfigs()
         else
         {
             PrintToServer("[SourceRank] Unsupported gamemode: %s", gv_Gamemode);
+        }
+    }
+    else if (StrEqual("nmrih", game)) {
+        char mapName[128];
+        GetCurrentMap(mapName, sizeof(mapName));
+
+        SafeUnhook("new_wave", OnSurvivalWaveStart, EventHookMode_Post, gvf_Hooked_Survival_NewWave);
+        SafeUnhook("nmrih_round_begin", OnSurvivalStart, EventHookMode_Post, gvf_Hooked_Survival_RoundBegin);
+        SafeUnhook("extraction_begin", OnSurvivalExtractionBegin, EventHookMode_Post, gvf_Hooked_Survival_ExtractionBegin);
+        SafeUnhook("nmrih_practice_ending", OnSurvivalPracticeEnded, EventHookMode_Post, gvf_Hooked_Survival_PracticeEnding);
+        SafeUnhook("objective_begin", OnObjectiveStart, EventHookMode_Post, gvf_Hooked_Objective_ObjectiveBegin);
+        SafeUnhook("objective_complete", OnObjectiveComplete, EventHookMode_Post, gvf_Hooked_Objective_ObjectiveComplete);
+        SafeUnhook("nmrih_practice_ending", OnObjectivePracticeEnded, EventHookMode_Post, gvf_Hooked_Objective_PracticeEnding);
+        SafeUnhook("round_start", OnObjectiveRoundStart, EventHookMode_Post, gvf_Hooked_Objective_RoundStart);
+        SafeUnhook("extraction_complete", OnObjectiveExtractionComplete, EventHookMode_Post, gvf_Hooked_Objective_ExtractionComplete);
+
+        if (StrContains(mapName, "nms_") == 0)
+        {
+            SafeHook("new_wave", OnSurvivalWaveStart, EventHookMode_Post, gvf_Hooked_Survival_NewWave);
+            SafeHook("nmrih_round_begin", OnSurvivalStart, EventHookMode_Post, gvf_Hooked_Survival_RoundBegin);
+            SafeHook("extraction_begin", OnSurvivalExtractionBegin, EventHookMode_Post, gvf_Hooked_Survival_ExtractionBegin);
+            SafeHook("nmrih_practice_ending", OnSurvivalPracticeEnded, EventHookMode_Post, gvf_Hooked_Survival_PracticeEnding);
+        }
+        else if (StrContains(mapName, "nmo_") == 0)
+        {
+            SafeHook("objective_begin", OnObjectiveStart, EventHookMode_Post, gvf_Hooked_Objective_ObjectiveBegin);
+            SafeHook("objective_complete", OnObjectiveComplete, EventHookMode_Post, gvf_Hooked_Objective_ObjectiveComplete);
+            SafeHook("nmrih_practice_ending", OnObjectivePracticeEnded, EventHookMode_Post, gvf_Hooked_Objective_PracticeEnding);
+            SafeHook("round_start", OnObjectiveRoundStart, EventHookMode_Post, gvf_Hooked_Objective_RoundStart);
+            SafeHook("extraction_complete", OnObjectiveExtractionComplete, EventHookMode_Post, gvf_Hooked_Objective_ExtractionComplete);
+        }
+        else {
+            PrintToServer("Unsupported map prefix: %s", mapName)
         }
     }
     //#endregion Events
@@ -443,6 +506,36 @@ public void OnPluginStart()
         "rankPlayerScoreInfectedLoseSurvivalPerSecond",
         "0.01",
         "Score lost per second for infected in survival",
+        FCVAR_NONE,
+        true,
+        0.0,
+        false,
+        0.0);
+
+    gc_PlayerScoreObjectiveComplete = CreateConVar(
+        "rankPlayerScoreObjectiveComplete",
+        "1",
+        "Score earned per objective complete",
+        FCVAR_NONE,
+        true,
+        0.0,
+        false,
+        0.0);
+
+    gc_PlayerScoreWaveSurvived = CreateConVar(
+        "rankPlayerScoreWaveSurvived",
+        "1",
+        "Score earned per wave survived",
+        FCVAR_NONE,
+        true,
+        0.0,
+        false,
+        0.0);
+
+    gc_PlayerScoreWaveSurvived = CreateConVar(
+        "rankPlayerScorePerScore",
+        "0.1",
+        "Ingame score converted to mmr",
         FCVAR_NONE,
         true,
         0.0,
@@ -1109,6 +1202,284 @@ public void OnSpecialKill(Event event, const char[] name, bool dontBroadcast)
             PrintToServer("[SourceRank] %d wrong victim name: %s", clientAttacker, victimname);
     }
 }
+
+public OnServerExitHibernation()
+{
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        gv_LastPlayerScore[i] = 0;
+        gv_IsDeadPlayer[i]    = false;
+    }
+    gv_ObjectivesCompleted = 0;
+}
+
+public void OnPlayerDie(Event event, const char[] name, bool dontBroadcast)
+{
+    int userid                 = event.GetInt("userid");
+    int client                 = GetClientOfUserId(userid);
+
+    gv_LastPlayerScore[client] = GetClientFrags(client);
+    gv_IsDeadPlayer[client]    = true;
+
+    PrintToServer("[SourceRank-OnPlayerDie] Player died %d", userid);
+}
+
+public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+{
+    int userid              = event.GetInt("userid");
+    int client              = GetClientOfUserId(userid);
+
+    gv_IsDeadPlayer[client] = false;
+    PrintToServer("[SourceRank-OnPlayerSpawn] Player spawned %d", userid);
+}
+
+public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
+{
+    gv_IsDeadPlayer[client] = true;
+
+    return true;
+}
+
+public void OnClientDisconnect(int client)
+{
+    gv_IsDeadPlayer[client] = false;
+}
+
+public void OnObjectiveStart(Event event, const char[] name, bool dontBroadcast)
+{
+    int  objectiveId = event.GetInt("id");
+    char objectiveName[32];
+    event.GetString("name", objectiveName, sizeof(objectiveName));
+    PrintToServer("[SourceRank-OnObjectiveStart] Objective started: %s : %d", objectiveName, objectiveId);
+
+    int onlinePlayers[MAXPLAYERS];
+    GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        int client = onlinePlayers[i];
+        if (client == 0) break;
+        gv_LastPlayerScore[onlinePlayers[i]] = 0;
+    }
+}
+
+public void OnObjectiveComplete(Event event, const char[] name, bool dontBroadcast)
+{
+    int objectiveId = event.GetInt("id");
+
+    if (objectiveId == -1)
+    {
+        PrintToServer("[SourceRank-OnObjectiveComplete] Invalid objective id, ignoring...");
+        return;
+    }
+
+    if (gv_ObjectiveInCooldown)
+    {
+        PrintToServer("[SourceRank-OnObjectiveComplete] WARNING: Objective complete event called, but the 'objectiveInCooldown' is still true..., map did not set correctly the objectives");
+        return;
+    }
+    gv_ObjectiveInCooldown = true;
+    CreateTimer(gv_ObjectiveCooldown, Timer_ObjectiveStart);
+
+    char objectiveName[32];
+    event.GetString("name", objectiveName, sizeof(objectiveName));
+    PrintToServer("[SourceRank-OnObjectiveComplete] Objective completed: %s : %d", objectiveName, objectiveId);
+
+    int onlinePlayers[MAXPLAYERS];
+    GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        int client = onlinePlayers[i];
+        if (client == 0) break;    // End of the list
+
+        if (gv_IsDeadPlayer[client])
+        {
+            char playerName[32];
+            GetClientName(client, playerName, sizeof(playerName));
+            PrintToServer("[PTEC-OnObjectiveComplete] Ignoring %s because he is dead", playerName);
+            continue;
+        }
+
+        // Objective reward
+        {
+            // Added score
+        }
+
+        // Score reward
+        {
+            int scoreDifference        = GetClientFrags(client) - gv_LastPlayerScore[client];
+            gv_LastPlayerScore[client] = GetClientFrags(client);
+            PrintToServer("[SourceRank-OnObjectiveComplete] %d scored: %d, in this round, total: %d", client, scoreDifference, GetClientFrags(client));
+            if (scoreDifference > 0)
+            {
+                // Check the best player
+            }
+        }
+    }
+
+    gv_ObjectivesCompleted++;
+}
+
+public Action Timer_ObjectiveStart(Handle timer, any data)
+{
+    PrintToServer("[SourceRank-Timer_ObjectiveStart] Objective cooldown reseted...");
+    gv_ObjectiveInCooldown = false;
+    return Plugin_Stop;
+}
+
+public void OnObjectivePracticeEnded(Event event, const char[] name, bool dontBroadcast)
+{
+    PrintToServer("[SourceRank-OnObjectivePracticeEnded] Practice ended");
+
+    gv_ObjectivesCompleted = 0;
+
+    int onlinePlayers[MAXPLAYERS];
+    GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        int client = onlinePlayers[i];
+        if (client == 0) break;
+
+        gv_LastPlayerScore[client] = 0;
+
+        // Show Rank??
+    }
+}
+
+public void OnObjectiveRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+    PrintToServer("[SourceRank-OnObjectiveRoundStart] Round start");
+    gv_ObjectivesCompleted = 0;
+}
+
+public void OnObjectiveExtractionComplete(Event event, const char[] name, bool dontBroadcast)
+{
+    int onlinePlayers[MAXPLAYERS];
+    GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        int client = onlinePlayers[i];
+        if (client == 0) break;
+
+        if (IsPlayerAlive(client))
+        {
+            char playerName[32];
+            GetClientName(client, playerName, sizeof(playerName));
+            PrintToServer("[SourceRank-OnObjectiveExtractionComplete] Ignoring %s because he is dead", playerName);
+            continue;
+        }
+
+        // Objective reward
+        {
+            // Added score
+        }
+
+        // Score reward
+        {
+            int scoreDifference        = GetClientFrags(client) - gv_LastPlayerScore[client];
+            gv_LastPlayerScore[client] = GetClientFrags(client);
+            PrintToServer("[PTEC-OnExtractionComplete] %d scored: %d, in this round, total: %d", client, scoreDifference, GetClientFrags(client));
+            if (scoreDifference > 0)
+            {
+                // Check the best player
+            }
+        }
+    }
+}
+//#endregion Objective
+
+//#region Survival
+public void OnSurvivalWaveStart(Event event, const char[] name, bool dontBroadcast)
+{
+    if (gv_ServerWave > 0)
+    {
+        OnSurvivalWaveFinish();
+    }
+
+    bool isSupply = event.GetBool("resupply");
+    if (!isSupply)
+    {
+        gv_ServerWave++;
+    }
+
+    int onlinePlayers[MAXPLAYERS];
+    GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        int client = onlinePlayers[i];
+        if (client == 0) break;
+        gv_LastPlayerScore[onlinePlayers[i]] = 0;
+    }
+
+    PrintToServer("[SourceRank-OnSurvivalWaveStart] Wave %d Started, supply: %b", gv_ServerWave, isSupply);
+}
+
+public void OnSurvivalStart(Event event, const char[] name, bool dontBroadcast)
+{
+    gv_ServerWave = 0;
+
+    PrintToServer("[SourceRank-OnSurvivalStart] Survival Started");
+}
+
+public void OnSurvivalPracticeEnded(Event event, const char[] name, bool dontBroadcast)
+{
+    PrintToServer("[SourceRank-OnSurvivalPracticeEnded] Practice ended");
+
+    int onlinePlayers[MAXPLAYERS];
+    GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        int client = onlinePlayers[i];
+        if (client == 0) break;
+
+        gv_LastPlayerScore[client] = 0;
+
+        // Added score
+    }
+}
+
+public void OnSurvivalWaveFinish()
+{
+    int onlinePlayers[MAXPLAYERS];
+    GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+    for (int i = 0; i < MAXPLAYERS; i++)
+    {
+        int client = onlinePlayers[i];
+        if (client == 0) break;    // End of the list
+
+        if (gv_IsDeadPlayer[client])
+        {
+            char playerName[32];
+            GetClientName(client, playerName, sizeof(playerName));
+            PrintToServer("[SourceRank-OnSurvivalWaveFinish] Ignoring %s because he is dead", playerName);
+            continue;
+        }
+
+        // Wave survival reward
+        {
+            // Added score
+        }
+
+        // Score reward
+        {
+            int scoreDifference        = GetClientFrags(client) - gv_LastPlayerScore[client];
+            gv_LastPlayerScore[client] = GetClientFrags(client);
+            PrintToServer("[PTEC-OnSurvivalWaveFinish] %d scored: %d, in this round, total: %d", client, scoreDifference, GetClientFrags(client));
+            if (scoreDifference > 0)
+            {
+                // Check best player
+            }
+        }
+    }
+
+    PrintToServer("[SourceRank-OnSurvivalWaveFinish] Wave %d Finished", gv_ServerWave);
+}
+
+public void OnSurvivalExtractionBegin(Event event, const char[] name, bool dontBroadcast)
+{
+    OnSurvivalWaveFinish();
+}
+//#endregion Survival
+
 //
 // #endregion Events
 //
