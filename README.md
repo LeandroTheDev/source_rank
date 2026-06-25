@@ -6,10 +6,10 @@ Creates a ranking system that works across multiple servers.
 ## Features
 - On round end receive MMR or lose based on your gameplay
 - [Left 4 Dead 2] On survival and versus show the survivor MVP (Most killed special infected)
-- [No More Room in Hell] End of objective or round show the survivor MVP (Most scores) (TO DO)
+- [No More Room in Hell] End of objective or round show the survivor MVP (Most scores)
 
 ## Requirements
-- If ``rankDisplayRank`` is enabled [chat-processor](https://github.com/KeithGDR/chat-processor) is required
+- If ``rankShouldDisplayRank`` is enabled [chat-processor](https://github.com/KeithGDR/chat-processor) is required
 - [Any Sourcemod compatible Database](https://www.mysql.com/)
 - Sourcemod and metamod
 
@@ -44,12 +44,24 @@ Creates a ranking system that works across multiple servers.
 - > Base score for infected at round end in survival [Left 4 Dead 2 Only]
 - rankPlayerScoreInfectedLoseSurvivalPerSecond
 - > Score lost per second for infected in survival [Left 4 Dead 2 Only]
+- rankShowScoreMVP
+- > Show score MVP at round end
+- rankShowInfectedKillsMVP
+- > Show infected kills MVP at round end [Left 4 Dead 2 Only]
+- rankPlayerScoreObjectiveComplete
+- > Score earned per objective complete [No More Room in Hell Only]
+- rankPlayerScoreWaveSurvived
+- > Score earned per wave survived [No More Room in Hell Only]
+- rankPlayerScorePerScore
+- > Ingame score converted to MMR [No More Room in Hell Only]
 - rankCount
 - > Number of ranks
 - rankDatabaseConfig
 - > Database config name
 - rankNamesPath
 - > Rank names file path
+- rankShouldDisplayRank
+- > Should display the rank in login and chats (requires [chat-processor](https://github.com/KeithGDR/chat-processor))
 
 ## Usage
 1. Download the plugin from the latest release:
@@ -70,7 +82,7 @@ Creates a ranking system that works across multiple servers.
 
 4. Create the database and table, table must be ``left4dead2``/``nmrih`` because the plugin use the game name as table
 ```sql
-GRANT ALL PRIVILEGES ON sourcerank.* TO 'sourcerank_admin'@'localhost' IDENTIFIED BY '3Dyp6OZRrz7Qma2NY0re3mKIi84XnWv3n2FgsTF67jtiKXC2J8' WITH GRANT OPTION; FLUSH PRIVILEGES;
+GRANT ALL PRIVILEGES ON sourcerank.* TO 'sourcerank_admin'@'localhost' IDENTIFIED BY 'supersecret' WITH GRANT OPTION; FLUSH PRIVILEGES;
 CREATE DATABASE sourcerank;
 USE sourcerank;
 CREATE TABLE gamename (
