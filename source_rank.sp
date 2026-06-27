@@ -1247,6 +1247,8 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     gv_IsDeadPlayer[client] = false;
     gv_PlayerTokens[client] = 0;
     PrintToServer("[SourceRank-OnPlayerSpawn] Player spawned %d", userid);
+
+    RegisterPlayer(client);
 }
 
 public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
@@ -1886,7 +1888,7 @@ stock void ShowRankMenu_Callback(
 
     if (!IsValidClient(client)) return;
 
-    if (results != null && SQL_HasResultSet(results))
+    if (results != null && SQL_HasResultSet(results) && SQL_GetRowCount(results) > 0)
     {
         while (SQL_FetchRow(results))
         {
@@ -1901,6 +1903,13 @@ stock void ShowRankMenu_Callback(
             menu.AddItem("0", "OK");
             menu.Display(client, 4);
         }
+    }
+    else
+    {
+        Menu menu = new Menu(MenuHandler);
+        menu.SetTitle("Your Current Rank: %s, Total MMR: 0", gv_RankNames[0]);
+        menu.AddItem("0", "OK");
+        menu.Display(client, 4);
     }
 }
 
