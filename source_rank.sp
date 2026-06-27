@@ -926,7 +926,7 @@ public void RoundEndSurvivalVersus(Event event, const char[] name, bool dontBroa
             if (gv_ShouldDebug)
                 PrintToServer("[SourceRank] [RoundEndSurvivalVersus] %d IUpdated rank: %f", client, GetRankEarnByTimeStampInfected());
         }
-        PrintToServer("[SourceRank] Player: %d, team: %d, score: %d", client, team, gv_PlayersScores[client]);
+        PrintToServer("[SourceRank] Player: %d, team: %d, score: %f", client, team, gv_PlayersScores[client]);
     }
 
     ShowMVPsAndUploadMMR();
@@ -1064,7 +1064,7 @@ public void OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
             return;
         }
 
-        int   totalDamage = event.GetInt("dmgc_health");
+        int   totalDamage = event.GetInt("dmg_health");
         float earnedMMR   = gv_PlayerScoreEarnPerSurvivorHurt * totalDamage;
 
         gv_PlayersScores[infectedClient] += earnedMMR;
@@ -1939,7 +1939,7 @@ stock CheckMaxScore(int client)
     if (gv_PlayersScores[client] > gv_PlayerMaxScore)
     {
         if (gv_ShouldDebug)
-            PrintToServer("[SourceRank] %d is on max score");
+            PrintToServer("[SourceRank] %d is on max score", client);
 
         gv_PlayersScores[client] = gv_PlayerMaxScore;
     }
