@@ -367,8 +367,7 @@ void SafeHook(const char[] event, EventHook callback, EventHookMode mode, bool& 
 {
     if (!state)
     {
-        HookEventEx(event, callback, mode);
-        state = true;
+        state = HookEventEx(event, callback, mode);
     }
 }
 
