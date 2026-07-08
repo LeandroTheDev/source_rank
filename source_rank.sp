@@ -1,5 +1,5 @@
 #include <sourcemod>
-#include <scp>
+#include <chat-processor>
 
 public Plugin myinfo =
 {

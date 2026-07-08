@@ -65,7 +65,7 @@ Creates a ranking system that works across multiple servers.
 
 ## Usage
 1. Download the plugin from the latest release:
-[Releases Section](https://github.com/LeandroTheDev/left_4_rank/releases)
+[Releases Section](https://github.com/LeandroTheDev/source_rank/releases)
 
 2. Place the compiled .smx file into the following folder on your server: addons/sourcemod/plugins/
 
