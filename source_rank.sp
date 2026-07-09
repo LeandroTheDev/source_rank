@@ -27,12 +27,10 @@ float  gv_PlayerScoreLosePerIncapacitated          = 0.5;
 float  gv_PlayerScoreEarnPerIncapacitated          = 0.5;
 float  gv_PlayerScoreStartSurvival                 = -3.0;
 float  gv_PlayerScoreEarnSurvivalPerSecond         = 0.01;
-float  gv_PlayerScoreInfectedStartSurvival         = 6.0;
-float  gv_PlayerScoreInfectedLoseSurvivalPerSecond = 0.01;
-float  gv_PlayerScoreScavengeSurvivorStart         = 6.0;
-float  gv_PlayerScoreScavengeSurvivorLosePerSecond = 0.01;
-float  gv_PlayerScoreScavengeInfectedStart         = -3.0;
-float  gv_PlayerScoreScavengeInfectedEarnPerSecond = 0.01;
+float  gv_PlayerScoreInfectedStartSurvival         = 0.0;
+float  gv_PlayerScoreInfectedLoseSurvivalPerSecond = 0.04;
+float  gv_PlayerScoreScavengeGascanSurvivorEarn     = 0.3;
+float  gv_PlayerScoreScavengeGascanInfectedLose     = 0.4;
 float  gv_PlayerScoreObjectiveComplete             = 1.0;
 float  gv_PlayerScoreWaveSurvived                  = 1.0;
 float  gv_PlayerScorePerScore                      = 0.1;
@@ -75,10 +73,8 @@ ConVar gc_PlayerScoreStartSurvival;
 ConVar gc_PlayerScoreEarnSurvivalPerSecond;
 ConVar gc_PlayerScoreInfectedStartSurvival;
 ConVar gc_PlayerScoreInfectedLoseSurvivalPerSecond;
-ConVar gc_PlayerScoreScavengeSurvivorStart;
-ConVar gc_PlayerScoreScavengeSurvivorLosePerSecond;
-ConVar gc_PlayerScoreScavengeInfectedStart;
-ConVar gc_PlayerScoreScavengeInfectedEarnPerSecond;
+ConVar gc_PlayerScoreScavengeGascanSurvivorEarn;
+ConVar gc_PlayerScoreScavengeGascanInfectedLose;
 ConVar gc_PlayerScoreObjectiveComplete;
 ConVar gc_PlayerScoreWaveSurvived;
 ConVar gc_PlayerScorePerScore;
@@ -132,17 +128,12 @@ void   ReadVariables()
     gv_PlayerScoreInfectedLoseSurvivalPerSecond = gc_PlayerScoreInfectedLoseSurvivalPerSecond.FloatValue;
     PrintToServer("[SourceRank] Player score infected lose survival per second: %f", gv_PlayerScoreInfectedLoseSurvivalPerSecond);
 
-    gv_PlayerScoreScavengeSurvivorStart = gc_PlayerScoreScavengeSurvivorStart.FloatValue;
-    PrintToServer("[SourceRank] Player score scavenge survivor start: %f", gv_PlayerScoreScavengeSurvivorStart);
 
-    gv_PlayerScoreScavengeSurvivorLosePerSecond = gc_PlayerScoreScavengeSurvivorLosePerSecond.FloatValue;
-    PrintToServer("[SourceRank] Player score scavenge survivor lose per second: %f", gv_PlayerScoreScavengeSurvivorLosePerSecond);
+    gv_PlayerScoreScavengeGascanSurvivorEarn = gc_PlayerScoreScavengeGascanSurvivorEarn.FloatValue;
+    PrintToServer("[SourceRank] Player score scavenge gascan survivor earn: %f", gv_PlayerScoreScavengeGascanSurvivorEarn);
 
-    gv_PlayerScoreScavengeInfectedStart = gc_PlayerScoreScavengeInfectedStart.FloatValue;
-    PrintToServer("[SourceRank] Player score scavenge infected start: %f", gv_PlayerScoreScavengeInfectedStart);
-
-    gv_PlayerScoreScavengeInfectedEarnPerSecond = gc_PlayerScoreScavengeInfectedEarnPerSecond.FloatValue;
-    PrintToServer("[SourceRank] Player score scavenge infected earn per second: %f", gv_PlayerScoreScavengeInfectedEarnPerSecond);
+    gv_PlayerScoreScavengeGascanInfectedLose = gc_PlayerScoreScavengeGascanInfectedLose.FloatValue;
+    PrintToServer("[SourceRank] Player score scavenge gascan infected lose: %f", gv_PlayerScoreScavengeGascanInfectedLose);
 
     gv_PlayerScoreObjectiveComplete = gc_PlayerScoreObjectiveComplete.FloatValue;
     PrintToServer("[SourceRank] Player score objective complete: %f", gv_PlayerScoreObjectiveComplete);
@@ -548,7 +539,7 @@ public void OnPluginStart()
 
     gc_PlayerScoreInfectedStartSurvival = CreateConVar(
         "rankPlayerScoreInfectedStartSurvival",
-        "6.0",
+        "0.0",
         "Base score for infected at round end in survival",
         FCVAR_NONE,
         true,
@@ -558,7 +549,7 @@ public void OnPluginStart()
 
     gc_PlayerScoreInfectedLoseSurvivalPerSecond = CreateConVar(
         "rankPlayerScoreInfectedLoseSurvivalPerSecond",
-        "0.01",
+        "0.04",
         "Score lost per second for infected in survival",
         FCVAR_NONE,
         true,
@@ -566,40 +557,21 @@ public void OnPluginStart()
         false,
         0.0);
 
-    gc_PlayerScoreScavengeSurvivorStart = CreateConVar(
-        "rankPlayerScoreScavengeSurvivorStart",
-        "6.0",
-        "Base score for survivors at scavenge round end (decreases over time)",
-        FCVAR_NONE,
-        false,
-        0.0,
-        false,
-        0.0);
 
-    gc_PlayerScoreScavengeSurvivorLosePerSecond = CreateConVar(
-        "rankPlayerScoreScavengeSurvivorLosePerSecond",
-        "0.01",
-        "Score survivors lose per second in scavenge",
+    gc_PlayerScoreScavengeGascanSurvivorEarn = CreateConVar(
+        "rankPlayerScoreScavengeGascanSurvivorEarn",
+        "0.3",
+        "Score survivors earn per gascan poured in scavenge",
         FCVAR_NONE,
         true,
         0.0,
         false,
         0.0);
 
-    gc_PlayerScoreScavengeInfectedStart = CreateConVar(
-        "rankPlayerScoreScavengeInfectedStart",
-        "-3.0",
-        "Base score for infected at scavenge round end (increases over time)",
-        FCVAR_NONE,
-        false,
-        0.0,
-        false,
-        0.0);
-
-    gc_PlayerScoreScavengeInfectedEarnPerSecond = CreateConVar(
-        "rankPlayerScoreScavengeInfectedEarnPerSecond",
-        "0.01",
-        "Score infected earn per second in scavenge",
+    gc_PlayerScoreScavengeGascanInfectedLose = CreateConVar(
+        "rankPlayerScoreScavengeGascanInfectedLose",
+        "0.4",
+        "Score infected lose per gascan poured in scavenge",
         FCVAR_NONE,
         true,
         0.0,
@@ -890,7 +862,6 @@ public void MarkerReached(Event event, const char[] name, bool dontBroadcast)
 
 public void RoundEndVersus(Event event, const char[] name, bool dontBroadcast)
 {
-    int winner = event.GetInt("winner");
     int reason = event.GetInt("reason");
 
     // Restart from hibernation
@@ -902,29 +873,13 @@ public void RoundEndVersus(Event event, const char[] name, bool dontBroadcast)
     // Chapter ended
     if (reason == 6) return;
 
+    int winner = event.GetInt("winner");
+
+    if (gv_ShouldDebug)
+        PrintToServer("[SourceRank] Versus winner team: %d", winner);
+
     int onlinePlayers[MAXPLAYERS];
     GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
-
-    winner = 3;
-    for (int i = 0; i < MAXPLAYERS; i++)
-    {
-        int client = onlinePlayers[i];
-        if (client == 0) break;
-
-        // 2 Survival - 3 Zombie
-        int team = GetClientTeam(client);
-
-        if (team == 2)
-        {
-            // Check if a player survivor is alive
-            if (!(GetEntProp(client, Prop_Send, "m_isIncapacitated") != 0) && IsPlayerAlive(client))
-            {
-                // Yes it is, so we can say that the winner team is survivor
-                winner = 2;
-                break;
-            }
-        }
-    }
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -1024,17 +979,10 @@ public void RoundStartScavenge(Event event, const char[] name, bool dontBroadcas
     }
 
     ClearPlayerScores();
-
-    gv_TimeStampSurvived      = 0;
-    gv_TimeStampSurvivedTimer = CreateTimer(1.0, OnTimestampPassed, 0, TIMER_REPEAT);
 }
 
 public void RoundEndScavenge(Event event, const char[] name, bool dontBroadcast)
 {
-    if (gv_TimeStampSurvivedTimer != INVALID_HANDLE)
-        CloseHandle(gv_TimeStampSurvivedTimer);
-    gv_TimeStampSurvivedTimer = INVALID_HANDLE;
-
     int reason = event.GetInt("reason");
 
     // Restart from hibernation
@@ -1047,10 +995,15 @@ public void RoundEndScavenge(Event event, const char[] name, bool dontBroadcast)
     if (reason == 6) return;
 
     if (gv_ShouldDebug)
-        PrintToServer("[SourceRank] Scavenge round ended reason: %d, elapsed: %ds", reason, gv_TimeStampSurvived);
+        PrintToServer("[SourceRank] Scavenge round ended reason: %d", reason);
 
     int onlinePlayers[MAXPLAYERS];
     GetOnlinePlayers(onlinePlayers, sizeof(onlinePlayers));
+
+    int winner = event.GetInt("winner");
+
+    if (gv_ShouldDebug)
+        PrintToServer("[SourceRank] Scavenge winner team: %d", winner);
 
     for (int i = 0; i < MAXPLAYERS; i++)
     {
@@ -1061,23 +1014,19 @@ public void RoundEndScavenge(Event event, const char[] name, bool dontBroadcast)
 
         int team = GetClientTeam(client);
 
-        // Survivors: start high, lose per second (fast = more points)
-        if (team == 2)
+        if (team == winner)
         {
-            float earned = gv_PlayerScoreScavengeSurvivorStart - (gv_TimeStampSurvived * gv_PlayerScoreScavengeSurvivorLosePerSecond);
-            gv_PlayersScores[client] += earned;
+            gv_PlayersScores[client] += gv_PlayerScoreEarnOnRoundWin;
 
             if (gv_ShouldDebug)
-                PrintToServer("[SourceRank] [RoundEndScavenge] Survivor %d earned: %f (time: %ds)", client, earned, gv_TimeStampSurvived);
+                PrintToServer("[SourceRank] [RoundEndScavenge] %d earned: %f for winning", client, gv_PlayerScoreEarnOnRoundWin);
         }
-        // Infected: start low, earn per second (slow = more points)
-        else if (team == 3)
+        else
         {
-            float earned = gv_PlayerScoreScavengeInfectedStart + (gv_TimeStampSurvived * gv_PlayerScoreScavengeInfectedEarnPerSecond);
-            gv_PlayersScores[client] += earned;
+            gv_PlayersScores[client] -= gv_PlayerScoreLoseOnRoundLose;
 
             if (gv_ShouldDebug)
-                PrintToServer("[SourceRank] [RoundEndScavenge] Infected %d earned: %f (time: %ds)", client, earned, gv_TimeStampSurvived);
+                PrintToServer("[SourceRank] [RoundEndScavenge] %d lost: %f for losing", client, gv_PlayerScoreLoseOnRoundLose);
         }
 
         PrintToServer("[SourceRank] Player: %d, team: %d, score: %f", client, team, gv_PlayersScores[client]);
@@ -1093,10 +1042,10 @@ public void OnGascanPoured(Event event, const char[] name, bool dontBroadcast)
 
     if (IsValidClient(client) && GetClientTeam(client) == 2)
     {
-        gv_PlayersScores[client] += 0.3;
+        gv_PlayersScores[client] += gv_PlayerScoreScavengeGascanSurvivorEarn;
 
         if (gv_ShouldDebug)
-            PrintToServer("[SourceRank] [OnGascanPoured] Survivor %d poured a can, earned 0.3 MMR, total: %f", client, gv_PlayersScores[client]);
+            PrintToServer("[SourceRank] [OnGascanPoured] Survivor %d poured a can, earned %f MMR, total: %f", client, gv_PlayerScoreScavengeGascanSurvivorEarn, gv_PlayersScores[client]);
     }
 
     int onlinePlayers[MAXPLAYERS];
@@ -1110,10 +1059,10 @@ public void OnGascanPoured(Event event, const char[] name, bool dontBroadcast)
         if (!IsValidClient(infected)) continue;
         if (GetClientTeam(infected) != 3) continue;
 
-        gv_PlayersScores[infected] -= 0.1;
+        gv_PlayersScores[infected] -= gv_PlayerScoreScavengeGascanInfectedLose;
 
         if (gv_ShouldDebug)
-            PrintToServer("[SourceRank] [OnGascanPoured] Infected %d lost 0.1 MMR, total: %f", infected, gv_PlayersScores[infected]);
+            PrintToServer("[SourceRank] [OnGascanPoured] Infected %d lost %f MMR, total: %f", infected, gv_PlayerScoreScavengeGascanInfectedLose, gv_PlayersScores[infected]);
     }
 }
 
@@ -1248,6 +1197,13 @@ public void OnPlayerHurt(Event event, const char[] name, bool dontBroadcast)
             return;
         }
 
+        if (GetEntProp(infectedClient, Prop_Send, "m_zombieClass") == 8)
+        {
+            if (gv_ShouldDebug)
+                PrintToServer("[SourceRank] [OnPlayerHurt] Ignored: Attacker is Tank");
+            return;
+        }
+
         int   totalDamage = event.GetInt("dmg_health");
         float earnedMMR   = gv_PlayerScoreEarnPerSurvivorHurt * totalDamage;
 
@@ -1291,7 +1247,7 @@ public void OnPlayerIncapacitated(Event event, const char[] name, bool dontBroad
         return;
     }
 
-    if (GetClientTeam(infectedClient) == 2)
+    if (GetClientTeam(infectedClient) == 3)
     {
         gv_PlayersScores[infectedClient] += gv_PlayerScoreEarnPerIncapacitated;
         PrintToServer("[SourceRank] [OnPlayerIncapacitated] %d incapacitated someone and earn: %f MMR, total: %f", infectedClient, gv_PlayerScoreEarnPerIncapacitated, gv_PlayersScores[infectedClient]);

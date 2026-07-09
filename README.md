@@ -44,14 +44,10 @@ Creates a ranking system that works across multiple servers.
 - > Base score for infected at round end in survival [Left 4 Dead 2 Only]
 - rankPlayerScoreInfectedLoseSurvivalPerSecond
 - > Score lost per second for infected in survival [Left 4 Dead 2 Only]
-- rankPlayerScoreScavengeSurvivorStart
-- > Base score for survivors at scavenge round end, decreases over time (faster = more points) [Left 4 Dead 2 Scavenge Only]
-- rankPlayerScoreScavengeSurvivorLosePerSecond
-- > Score survivors lose per second in scavenge [Left 4 Dead 2 Scavenge Only]
-- rankPlayerScoreScavengeInfectedStart
-- > Base score for infected at scavenge round end, increases over time (longer = more points) [Left 4 Dead 2 Scavenge Only]
-- rankPlayerScoreScavengeInfectedEarnPerSecond
-- > Score infected earn per second in scavenge [Left 4 Dead 2 Scavenge Only]
+- rankPlayerScoreScavengeGascanSurvivorEarn
+- > Score survivors earn per gascan poured in scavenge [Left 4 Dead 2 Scavenge Only]
+- rankPlayerScoreScavengeGascanInfectedLose
+- > Score infected lose per gascan poured in scavenge [Left 4 Dead 2 Scavenge Only]
 - rankShowScoreMVP
 - > Show score MVP at round end
 - rankShowInfectedKillsMVP
