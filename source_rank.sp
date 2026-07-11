@@ -25,10 +25,11 @@ float  gv_PlayerScoreEarnPerSpecialKill            = 0.2;
 float  gv_PlayerScoreEarnPerRevive                 = 0.5;
 float  gv_PlayerScoreLosePerIncapacitated          = 0.5;
 float  gv_PlayerScoreEarnPerIncapacitated          = 0.5;
+float  gv_PlayerScoreEarnPerTankIncapacitated      = 2.0;
 float  gv_PlayerScoreStartSurvival                 = -3.0;
 float  gv_PlayerScoreEarnSurvivalPerSecond         = 0.01;
-float  gv_PlayerScoreInfectedStartSurvival         = 0.0;
-float  gv_PlayerScoreInfectedLoseSurvivalPerSecond = 0.04;
+float  gv_PlayerScoreInfectedStartSurvival         = 3.0;
+float  gv_PlayerScoreInfectedLoseSurvivalPerSecond = 0.02;
 float  gv_PlayerScoreScavengeGascanSurvivorEarn     = 0.3;
 float  gv_PlayerScoreScavengeGascanInfectedLose     = 0.4;
 float  gv_PlayerScoreObjectiveComplete             = 1.0;
@@ -69,6 +70,7 @@ ConVar gc_PlayerScoreEarnPerSpecialKill;
 ConVar gc_PlayerScoreEarnPerRevive;
 ConVar gc_PlayerScoreLosePerIncapacitated;
 ConVar gc_PlayerScoreEarnPerIncapacitated;
+ConVar gc_PlayerScoreEarnPerTankIncapacitated;
 ConVar gc_PlayerScoreStartSurvival;
 ConVar gc_PlayerScoreEarnSurvivalPerSecond;
 ConVar gc_PlayerScoreInfectedStartSurvival;
@@ -115,6 +117,9 @@ void   ReadVariables()
 
     gv_PlayerScoreEarnPerIncapacitated = gc_PlayerScoreEarnPerIncapacitated.FloatValue;
     PrintToServer("[SourceRank] Player score earn per incapacitated: %f", gv_PlayerScoreEarnPerIncapacitated);
+
+    gv_PlayerScoreEarnPerTankIncapacitated = gc_PlayerScoreEarnPerTankIncapacitated.FloatValue;
+    PrintToServer("[SourceRank] Player score earn per tank incapacitated: %f", gv_PlayerScoreEarnPerTankIncapacitated);
 
     gv_PlayerScoreStartSurvival = gc_PlayerScoreStartSurvival.FloatValue;
     PrintToServer("[SourceRank] Player score start survival: %f", gv_PlayerScoreStartSurvival);
@@ -517,6 +522,16 @@ public void OnPluginStart()
         false,
         0.0);
 
+    gc_PlayerScoreEarnPerTankIncapacitated = CreateConVar(
+        "rankPlayerScoreEarnPerTankIncapacitated",
+        "2.0",
+        "Score earned for tank incapacitating a survivor",
+        FCVAR_NONE,
+        true,
+        0.0,
+        false,
+        0.0);
+
     gc_PlayerScoreStartSurvival = CreateConVar(
         "rankPlayerScoreStartSurvival",
         "-3.0",
@@ -549,7 +564,7 @@ public void OnPluginStart()
 
     gc_PlayerScoreInfectedLoseSurvivalPerSecond = CreateConVar(
         "rankPlayerScoreInfectedLoseSurvivalPerSecond",
-        "0.04",
+        "0.02",
         "Score lost per second for infected in survival",
         FCVAR_NONE,
         true,
@@ -828,7 +843,12 @@ public void RoundStartSurvivalVersus(Event event, const char[] name, bool dontBr
 
     ClearPlayerScores();
 
-    gv_TimeStampSurvived      = 0;
+    gv_TimeStampSurvived = 0;
+    if (gv_TimeStampSurvivedTimer != INVALID_HANDLE)
+    {
+        CloseHandle(gv_TimeStampSurvivedTimer);
+        gv_TimeStampSurvivedTimer = INVALID_HANDLE;
+    }
     gv_TimeStampSurvivedTimer = CreateTimer(1.0, OnTimestampPassed, 0, TIMER_REPEAT);
 }
 
@@ -1249,8 +1269,10 @@ public void OnPlayerIncapacitated(Event event, const char[] name, bool dontBroad
 
     if (GetClientTeam(infectedClient) == 3)
     {
-        gv_PlayersScores[infectedClient] += gv_PlayerScoreEarnPerIncapacitated;
-        PrintToServer("[SourceRank] [OnPlayerIncapacitated] %d incapacitated someone and earn: %f MMR, total: %f", infectedClient, gv_PlayerScoreEarnPerIncapacitated, gv_PlayersScores[infectedClient]);
+        bool isTank = GetEntProp(infectedClient, Prop_Send, "m_zombieClass") == 8;
+        float earnedIncap = isTank ? gv_PlayerScoreEarnPerTankIncapacitated : gv_PlayerScoreEarnPerIncapacitated;
+        gv_PlayersScores[infectedClient] += earnedIncap;
+        PrintToServer("[SourceRank] [OnPlayerIncapacitated] %d incapacitated someone and earn: %f MMR, total: %f", infectedClient, earnedIncap, gv_PlayersScores[infectedClient]);
     }
     else {
         if (gv_ShouldDebug)
